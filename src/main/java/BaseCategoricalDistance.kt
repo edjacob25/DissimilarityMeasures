@@ -54,16 +54,16 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
 
             when {
                 firstI == secondI -> {
-                    diff = difference(first.stringValue(first.valueSparse(p1).toInt()), second.stringValue(second.valueSparse(p2).toInt()))
+                    diff = difference(firstI, first.stringValue(first.valueSparse(p1).toInt()), second.stringValue(second.valueSparse(p2).toInt()))
                     p1++
                     p2++
                 }
                 firstI > secondI -> {
-                    diff = difference("", second.stringValue(second.valueSparse(p2).toInt()))
+                    diff = difference(secondI,"", second.stringValue(second.valueSparse(p2).toInt()))
                     p2++
                 }
                 else -> {
-                    diff = difference(first.stringValue(first.valueSparse(p1).toInt()), "")
+                    diff = difference(firstI, first.stringValue(first.valueSparse(p1).toInt()), "")
                     p1++
                 }
             }
@@ -78,8 +78,7 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
         return distance
     }
 
-    abstract fun difference(val1: String, val2: String): Double
-
+    abstract fun difference(index: Int, val1: String, val2: String): Double
 
     override fun difference(index: Int, val1: Double, val2: Double): Double {
         when (m_Data.attribute(index).type()) {
@@ -129,14 +128,30 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
         }
     }
 
+    override fun updateDistance(currDist: Double, diff: Double): Double {
+        return currDist + ((1/this.m_Data.numAttributes()) * diff)
+    }
+
     override fun getRevision(): String {
         return RevisionUtils.extract("Revision: 1")
     }
 
-    override fun updateDistance(p0: Double, p1: Double): Double {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun Instances.frequency(index: Int, value: String): Int {
+        var freq = 0
+        for (item in this){
+            if (item.stringValue(index) == value)
+                freq++
+        }
+        return freq
     }
 
+    fun Instances.probabilityA(index: Int, value: String): Double {
+        return frequency(index, value) / this.numInstances().toDouble()
+    }
 
-
+    fun Instances.probabilityB(index: Int, value: String): Double {
+        val freq = frequency(index, value)
+        val numberInstances = this.numInstances().toDouble()
+        return (freq * (freq -1)) / (numberInstances * (numberInstances - 1))
+    }
 }

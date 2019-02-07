@@ -26,7 +26,7 @@ Maintainer=Jacob Rivera <edjacob25@gmail.com>
 License=MIT License
 
 # Description (required)
-Description=An implementation of several simmilarity measures for categorical data, specifically using the weka.core.KMeans Clustering algorithm
+Description=An implementation of several simmilarity measures for categorical data, specifically using the weka.clusterers.SimpleKMeans Clustering algorithm
 
 # Package URL for obtaining the package archive (required)
 PackageURL=https://github.com/edjacob25/DissimilarityMeasures

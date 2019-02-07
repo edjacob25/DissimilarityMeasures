@@ -3,7 +3,6 @@ import weka.core.BaseCategoricalDistance
 
 class Eskin : BaseCategoricalDistance() {
 
-
     override fun difference(index: Int, val1: String, val2: String): Double {
         return if (val1 == val2){
             1.0

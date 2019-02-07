@@ -6,7 +6,12 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
     constructor() : super()
     constructor(data: Instances?) : super(data)
 
-    val frequencies = FrequencyCompanion(m_Data)
+    lateinit var frequencies: FrequencyCompanion
+    override fun setInstances(insts: Instances?) {
+        super.setInstances(insts)
+        println("Setting instances")
+        frequencies = FrequencyCompanion(insts!!)
+    }
 
     override fun distance(first: Instance?, second: Instance?, cutOffValue: Double, stats: PerformanceStats?): Double {
         var distance = 0.0
@@ -70,7 +75,7 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
                 }
             }
             stats?.incrCoordCount()
-
+            println("Distance so far: $distance --- Diff calculated: $diff")
             distance = updateDistance(distance, diff)
             if (distance > cutOffValue) {
                 return java.lang.Double.POSITIVE_INFINITY

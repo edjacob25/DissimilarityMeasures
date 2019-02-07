@@ -1,8 +1,9 @@
 package weka.core
 
 import weka.core.Instances
+import java.io.Serializable
 
-class FrequencyCompanion constructor(instances: Instances) {
+class FrequencyCompanion constructor(instances: Instances) : Serializable {
     private val freqs : HashMap<String, HashMap<String, Int>> = createStats(instances)
 
     private fun createStats(instances: Instances): HashMap<String, HashMap<String, Int>> {

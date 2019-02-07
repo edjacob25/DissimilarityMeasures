@@ -19,8 +19,10 @@
             <outputDirectory>lib</outputDirectory>
             <unpack>false</unpack>
             <includes>
-                <include>nz.ac.waikato.cms.weka:weka-stable</include>
+                <include>nz.ac.waikato.cms.weka:weka-dev</include>
                 <include>org.jetbrains.kotlin:kotlin-stdlib-jdk8</include>
+                <include>org.jetbrains.kotlin:kotlin-stdlib-common</include>
+                <include>org.jetbrains.kotlin:kotlin-reflect</include>
             </includes>
         </dependencySet>
     </dependencySets>

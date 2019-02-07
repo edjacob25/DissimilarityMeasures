@@ -1,3 +1,5 @@
+package weka.core
+
 import weka.core.Instances
 
 class FrequencyCompanion constructor(instances: Instances) {

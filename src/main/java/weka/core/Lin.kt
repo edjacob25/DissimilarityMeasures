@@ -1,5 +1,5 @@
-package Measures
-import BaseCategoricalDistance
+package weka.core
+import weka.core.BaseCategoricalDistance
 
 class Lin : BaseCategoricalDistance() {
     override fun difference(index: Int, val1: String, val2: String): Double {

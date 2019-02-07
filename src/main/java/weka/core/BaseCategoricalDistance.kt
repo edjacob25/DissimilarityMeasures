@@ -1,6 +1,6 @@
-import weka.core.*
+package weka.core
+
 import weka.core.neighboursearch.PerformanceStats
-import java.util.Collections.frequency
 
 abstract class BaseCategoricalDistance : NormalizableDistance {
     constructor() : super()

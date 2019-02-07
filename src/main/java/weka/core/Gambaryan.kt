@@ -1,5 +1,4 @@
-package Measures
-import BaseCategoricalDistance
+package weka.core
 import kotlin.math.log
 
 class Gambaryan : BaseCategoricalDistance() {

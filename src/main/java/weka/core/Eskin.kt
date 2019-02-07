@@ -1,5 +1,5 @@
-package Measures
-import BaseCategoricalDistance
+package weka.core
+import weka.core.BaseCategoricalDistance
 
 class Eskin : BaseCategoricalDistance() {
 

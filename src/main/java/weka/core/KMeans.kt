@@ -1,3 +1,5 @@
+package weka.core
+
 import weka.clusterers.SimpleKMeans
 import weka.core.*
 

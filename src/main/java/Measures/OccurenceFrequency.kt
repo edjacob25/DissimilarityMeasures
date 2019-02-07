@@ -7,8 +7,8 @@ class OccurenceFrequency : BaseCategoricalDistance() {
             1.0
         } else {
 
-            val freqA = this.m_Data.frequency(index, val1).toDouble()
-            val freqB = this.m_Data.frequency(index, val2).toDouble()
+            val freqA = frequencies.getFrequency(m_Data.attribute(index).name(), val1).toDouble()
+            val freqB = frequencies.getFrequency(m_Data.attribute(index).name(), val2).toDouble()
             val items = this.m_Data.numInstances()
             return (1/ (1 + (Math.log10(items / freqA) * Math.log10(items / freqB))))
         }

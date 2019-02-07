@@ -7,7 +7,7 @@ class Gambaryan : BaseCategoricalDistance() {
         return if (val1 != val2){
             0.0
         } else{
-            val prob = this.m_Data.probabilityA(index, val1)
+            val prob = probabilityA(index, val1)
             return  -((prob * log(prob, 2.0)) + (1 - prob * log(1 - prob, 2.0)))
         }
     }

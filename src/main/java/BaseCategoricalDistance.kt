@@ -1,10 +1,12 @@
 import weka.core.*
 import weka.core.neighboursearch.PerformanceStats
+import java.util.Collections.frequency
 
 abstract class BaseCategoricalDistance : NormalizableDistance {
     constructor() : super()
     constructor(data: Instances?) : super(data)
 
+    val frequencies = FrequencyCompanion(m_Data)
 
     override fun distance(first: Instance?, second: Instance?, cutOffValue: Double, stats: PerformanceStats?): Double {
         var distance = 0.0
@@ -136,22 +138,14 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
         return RevisionUtils.extract("Revision: 1")
     }
 
-    fun Instances.frequency(index: Int, value: String): Int {
-        var freq = 0
-        for (item in this){
-            if (item.stringValue(index) == value)
-                freq++
-        }
-        return freq
+
+    fun probabilityA(index: Int, value: String): Double {
+        return frequencies.getFrequency(m_Data.attribute(index).name(), value) / m_Data.numInstances().toDouble()
     }
 
-    fun Instances.probabilityA(index: Int, value: String): Double {
-        return frequency(index, value) / this.numInstances().toDouble()
-    }
-
-    fun Instances.probabilityB(index: Int, value: String): Double {
-        val freq = frequency(index, value)
-        val numberInstances = this.numInstances().toDouble()
+    fun probabilityB(index: Int, value: String): Double {
+        val freq = frequencies.getFrequency(m_Data.attribute(index).name(), value)
+        val numberInstances = m_Data.numInstances().toDouble()
         return (freq * (freq -1)) / (numberInstances * (numberInstances - 1))
     }
 }

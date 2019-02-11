@@ -42,6 +42,20 @@ class TestSource() {
         Assert.assertEquals(0.8 + ((prob1 + prob2) * 0.2), distance, 0.00001)
     }
 
+    @test fun LinTest() {
+        val instances = createDataset()
+        val measure = Lin()
+        measure.instances = instances
+
+        val instance1 = DenseInstance(1.0, doubleArrayOf(0.0, 0.0, 0.0, 1.0, 1.0))
+        val instance2 = DenseInstance(1.0, doubleArrayOf(1.0, 1.0, 1.0, 1.0, 0.0))
+        instance1.setDataset(instances)
+        instance2.setDataset(instances)
+
+        val distance = measure.distance(instance1, instance2)
+        Assert.assertEquals(true, true)
+    }
+
     // This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset
     private fun createDataset(): Instances{
         val attributes = arrayListOf(

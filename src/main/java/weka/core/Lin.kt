@@ -15,9 +15,9 @@ class Lin : BaseCategoricalDistance() {
 
     override fun difference(index: Int, val1: String, val2: String): Double {
         return if (val1 == val2){
-            1 - (2 * Math.log(probabilityA(index, val1)))
+            -1 - (2 * Math.log(probabilityA(index, val1)))
         } else {
-            1 - (2 * Math.log(probabilityA(index, val1) + probabilityA(index, val2)))
+            -1 - (2 * Math.log(probabilityA(index, val1) + probabilityA(index, val2)))
         }
 
     }
@@ -26,10 +26,12 @@ class Lin : BaseCategoricalDistance() {
         var result = 0.0
         for (attribute in m_Data.m_Attributes){
             val index = attribute.index()
-            result += Math.log(probabilityA(index, activeInstance1.stringValue(index))) +
-                    Math.log(probabilityA(index, activeInstance2.stringValue(index)))
+            val log1 = Math.log(probabilityA(index, activeInstance1.stringValue(index)))
+            val log2 = Math.log(probabilityA(index, activeInstance2.stringValue(index)))
+            result += log1 + log2
+
         }
-        return 1.0/result
+        return (1.0/result) * diff
     }
 
     override fun globalInfo(): String {

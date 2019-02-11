@@ -17,7 +17,7 @@ class Gambaryan : BaseCategoricalDistance() {
         for (i in 0 until this.m_Data.numAttributes()) {
             totalAttributes += this.m_Data.attribute(i).numValues()
         }
-        return currDist + ((1/totalAttributes) * diff)
+        return currDist + ((1.0/totalAttributes) * diff)
     }
 
     override fun globalInfo(): String {

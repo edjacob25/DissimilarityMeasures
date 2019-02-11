@@ -58,24 +58,24 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
             }
 
             val diff: Double
-
+            val value1 = first.stringValue(firstI)
+            val value2 = second.stringValue(secondI)
             when {
                 firstI == secondI -> {
-                    diff = difference(firstI, first.stringValue(first.valueSparse(p1).toInt()), second.stringValue(second.valueSparse(p2).toInt()))
+                    diff = difference(firstI, value1, value2)
                     p1++
                     p2++
                 }
                 firstI > secondI -> {
-                    diff = difference(secondI,"", second.stringValue(second.valueSparse(p2).toInt()))
+                    diff = difference(secondI,"", value2)
                     p2++
                 }
                 else -> {
-                    diff = difference(firstI, first.stringValue(first.valueSparse(p1).toInt()), "")
+                    diff = difference(firstI, value1, "")
                     p1++
                 }
             }
             stats?.incrCoordCount()
-            println("Distance so far: $distance --- Diff calculated: $diff")
             distance = updateDistance(distance, diff)
             if (distance > cutOffValue) {
                 return java.lang.Double.POSITIVE_INFINITY
@@ -136,7 +136,9 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
     }
 
     override fun updateDistance(currDist: Double, diff: Double): Double {
-        return currDist + ((1/this.m_Data.numAttributes()) * diff)
+        val proportion = 1.0/this.m_Data.numAttributes()
+        val difference = proportion * diff
+        return currDist + difference
     }
 
     override fun getRevision(): String {

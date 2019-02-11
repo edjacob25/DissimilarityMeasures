@@ -4,12 +4,12 @@ import weka.core.BaseCategoricalDistance
 class InverseOccurenceFrequency : BaseCategoricalDistance() {
     override fun difference(index: Int, val1: String, val2: String): Double {
         return if (val1 == val2){
-            1.0
+            0.0
         } else {
 
             val freqA = frequencies.getFrequency(m_Data.attribute(index).name(), val1).toDouble()
             val freqB = frequencies.getFrequency(m_Data.attribute(index).name(), val2).toDouble()
-            return (1/ (1 + (Math.log10(freqA) * Math.log10(freqB))))
+            return 1 - (1/ (1 + (Math.log10(freqA) * Math.log10(freqB))))
         }
     }
 

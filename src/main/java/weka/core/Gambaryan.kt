@@ -4,10 +4,11 @@ import kotlin.math.log
 class Gambaryan : BaseCategoricalDistance() {
     override fun difference(index: Int, val1: String, val2: String): Double {
         return if (val1 != val2){
-            0.0
+            1.0
         } else{
             val prob = probabilityA(index, val1)
-            return  -((prob * log(prob, 2.0)) + (1 - prob * log(1 - prob, 2.0)))
+            val calc = -((prob * log(prob, 2.0)) + (1 - prob * log(1 - prob, 2.0)))
+            return 1 - calc
         }
     }
 

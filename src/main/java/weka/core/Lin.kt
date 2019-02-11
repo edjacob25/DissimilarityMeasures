@@ -24,7 +24,7 @@ class Lin : BaseCategoricalDistance() {
 
     override fun updateDistance(currDist: Double, diff: Double): Double {
         var result = 0.0
-        for (attribute in m_Data.m_Attributes){
+        for (attribute in this.instances.enumerateAttributes()){
             val index = attribute.index()
             val log1 = Math.log(probabilityA(index, activeInstance1.stringValue(index)))
             val log2 = Math.log(probabilityA(index, activeInstance2.stringValue(index)))

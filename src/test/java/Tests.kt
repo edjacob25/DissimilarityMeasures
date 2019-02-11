@@ -1,5 +1,6 @@
 package tests
 
+import org.junit.Assert
 import weka.clusterers.CategoricalKMeans
 import weka.core.*
 import kotlin.test.assertEquals
@@ -22,6 +23,23 @@ class TestSource() {
 
         val distance = measure.distance(instance1, instance2)
         assertEquals((1 - (4.0 / 6.0)) * 0.2, distance)
+    }
+
+    @test fun goodallTest() {
+        val instances = createDataset()
+        val measure = Goodall()
+        measure.instances = instances
+
+        val instance1 = DenseInstance(1.0, doubleArrayOf(0.0, 0.0, 0.0, 1.0, 1.0))
+        val instance2 = DenseInstance(1.0, doubleArrayOf(1.0, 1.0, 1.0, 1.0, 0.0))
+        instance1.setDataset(instances)
+        instance2.setDataset(instances)
+
+        val distance = measure.distance(instance1, instance2)
+
+        val prob1 =(6.0 * (6 -1)) / (14 * (14 - 1))
+        val prob2 = (8.0 * (8 -1)) / (14 * (14 - 1))
+        Assert.assertEquals(0.8 + ((prob1 + prob2) * 0.2), distance, 0.00001)
     }
 
     // This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset

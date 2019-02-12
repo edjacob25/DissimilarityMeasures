@@ -31,7 +31,7 @@ class Lin : BaseCategoricalDistance() {
             result += log1 + log2
 
         }
-        return (1.0/result) * diff
+        return currDist + ((1.0/result) * diff)
     }
 
     override fun globalInfo(): String {

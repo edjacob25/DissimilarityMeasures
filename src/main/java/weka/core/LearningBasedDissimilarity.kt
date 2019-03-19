@@ -2,6 +2,8 @@ package weka.core
 
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
+import weka.classifiers.bayes.BayesNet
+import weka.classifiers.bayes.NaiveBayes
 import weka.classifiers.trees.RandomForest
 import java.util.*
 import kotlin.collections.HashMap
@@ -16,24 +18,32 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     lateinit var simmilarityMatrices: HashMap<Int, HashMap<String, HashMap<String, Double>>>
 
     fun trainClassifiers(insts: Instances?){
-        /*val params = Utils.splitOptions("-P 100 -I 100 -num-slots 1 -K 0 -M 1.0 -V 0.001 -S 1")
-        val randomForest = Utils.forName(Classifier::class.java,"weka.classifiers.trees", params) as Classifier
-        randomForest.buildClassifier(m_Data)
-        randomForest.distributionForInstance()*/
         weights = HashMap()
         simmilarityMatrices = HashMap(HashMap(HashMap()))
         for (attribute in instances.enumerateAttributes()) {
-            val randomForest = RandomForest()
-            randomForest.buildClassifier(m_Data)
-            val eval = Evaluation(insts)
-            eval.evaluateModel(randomForest, insts)
-            val confusion = eval.confusionMatrix()
-            val simmilarity = calculateSimilarityMatrix(confusion)
-            weights[attribute.m_Index] = 1.0
+            val classifiers = initializeClassifiers()
+
+            for (classifier in classifiers){
+                classifier.buildClassifier(m_Data)
+                val eval = Evaluation(insts)
+                eval.evaluateModel(classifier, insts)
+                val confusion = eval.confusionMatrix()
+                val simmilarity = calculateSimilarityMatrix(confusion)
+            }
+
+            weights[attribute.m_Index] = 1.0 / instances.m_Attributes.size
             // TODO: How to set this
             //simmilarityMatrices[attribute.m_Index][][] = simmilarity[]
 
         }
+    }
+
+    fun initializeClassifiers(): List<Classifier>{
+        val classifiers = mutableListOf<Classifier>()
+        classifiers.add(1, RandomForest())
+        classifiers.add(2, NaiveBayes())
+        classifiers.add(3, BayesNet())
+        return classifiers
     }
 
     fun calculateSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray>{

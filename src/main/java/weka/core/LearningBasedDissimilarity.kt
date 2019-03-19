@@ -14,36 +14,83 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         trainClassifiers(insts)
     }
 
-    lateinit var weights : HashMap<Int, Double>
-    lateinit var simmilarityMatrices: HashMap<Int, HashMap<String, HashMap<String, Double>>>
+    private lateinit var weights : HashMap<Int, Double>
+    private lateinit var simmilarityMatrices: HashMap<Int, HashMap<String, HashMap<String, Double>>>
 
     fun trainClassifiers(insts: Instances?){
+        val instances = Instances(insts)
+
+
         weights = HashMap()
         simmilarityMatrices = HashMap(HashMap(HashMap()))
         for (attribute in instances.enumerateAttributes()) {
             val classifiers = initializeClassifiers()
 
-            for (classifier in classifiers){
-                classifier.buildClassifier(m_Data)
-                val eval = Evaluation(insts)
-                eval.evaluateModel(classifier, insts)
-                val confusion = eval.confusionMatrix()
-                val simmilarity = calculateSimilarityMatrix(confusion)
+            val stats = instances.attributeStats(attribute.index())
+
+            if (attribute.numValues() > 50 || !stats.nominalCounts.all { it > 0 }){
+                weights[attribute.m_Index] = 0.0
+                continue
             }
 
-            weights[attribute.m_Index] = 1.0 / instances.m_Attributes.size
-            // TODO: How to set this
-            //simmilarityMatrices[attribute.m_Index][][] = simmilarity[]
+            instances.setClass(attribute)
+
+            val results = mutableListOf<Pair<Array<DoubleArray>,Double>>()
+            for (classifier in classifiers){
+                results.add(evaluateClassifier(instances,classifier))
+            }
+            val (confusion, auc) = results.maxBy { it.second }!!
+            val simmilarity = calculateSimilarityMatrix(confusion)
+            weights[attribute.m_Index] = auc
+
+            //simmilarityMatrices[attribute.m_Index] = simmilarity[]
 
         }
     }
 
-    fun initializeClassifiers(): List<Classifier>{
+    fun initializeClassifiers(): List<Classifier> {
         val classifiers = mutableListOf<Classifier>()
         classifiers.add(1, RandomForest())
         classifiers.add(2, NaiveBayes())
         classifiers.add(3, BayesNet())
         return classifiers
+    }
+
+    fun evaluateClassifier(instances: Instances, classifier: Classifier): Pair<Array<DoubleArray>, Double>{
+        val folds = createFolds(instances)
+        val size =instances.numDistinctValues(instances.classAttribute())
+        val confusionMatrix = Array(size) { DoubleArray(size)}
+        var auc = 0.0
+        for ((training, testing) in folds){
+            classifier.buildClassifier(training)
+            val eval = Evaluation(instances)
+            eval.evaluateModel(classifier, testing)
+            auc += eval.weightedAreaUnderROC()
+            val confusion = eval.confusionMatrix()
+            for (i in 0..size) {
+                for (j in 0..size) {
+                    confusionMatrix[i][j] += confusion[i][j]
+                }
+            }
+        }
+
+        return Pair(confusionMatrix, auc)
+    }
+
+    fun createFolds( insts: Instances?,folds: Int = 10): List<Pair<Instances,Instances>> {
+        val seed = 1L
+        val rand = Random(seed)   // create seeded number generator
+        val randData = Instances(insts)   // create copy of original data
+        randData.randomize(rand)         // randomize data with number generator
+        randData.stratify(folds)
+        val sets = mutableListOf<Pair<Instances,Instances>>()
+        for (i in 0..folds){
+            val training = randData.trainCV(folds, i, rand)
+            val test = randData.testCV(folds, i)
+            sets.add(Pair(training, test))
+        }
+        return sets
+
     }
 
     fun calculateSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray>{
@@ -60,6 +107,22 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             result.add(newRow)
         }
         return result.toTypedArray()
+    }
+
+    fun computeMulticlassAUC(confusionMatrix: Array<DoubleArray>): Double{
+        var sum = 0.0
+        var count = 0
+        for (i in 0..confusionMatrix.size){
+            for (j in i + 1..confusionMatrix.size){
+                val TP = confusionMatrix[i][i]
+                val FP = confusionMatrix[j][i]
+                val FN = confusionMatrix[i][j]
+                val TN = confusionMatrix[j][j]
+                sum += TP
+                count = 0
+            }
+        }
+        return sum / count
     }
 
     override fun listOptions(): Enumeration<Option> {

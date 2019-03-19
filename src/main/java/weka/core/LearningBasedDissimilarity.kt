@@ -15,14 +15,13 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     }
 
     private lateinit var weights: HashMap<Int, Double>
-    private lateinit var simmilarityMatrices: HashMap<Int, HashMap<String, HashMap<String, Double>>>
+    private lateinit var similarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
 
-    fun trainClassifiers(insts: Instances?) {
+    private fun trainClassifiers(insts: Instances?) {
         val instances = Instances(insts)
 
-
         weights = HashMap()
-        simmilarityMatrices = HashMap(HashMap(HashMap()))
+        similarityMatrices = HashMap()
         for (attribute in instances.enumerateAttributes()) {
             val classifiers = initializeClassifiers()
 
@@ -32,7 +31,6 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
                 weights[attribute.m_Index] = 0.0
                 continue
             }
-
             instances.setClass(attribute)
 
             val results = mutableListOf<Pair<Array<DoubleArray>, Double>>()
@@ -40,15 +38,22 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
                 results.add(evaluateClassifier(instances, classifier))
             }
             val (confusion, auc) = results.maxBy { it.second }!!
-            val simmilarity = calculateSimilarityMatrix(confusion)
+            val similarity = calculateSimilarityMatrix(confusion)
             weights[attribute.m_Index] = auc
-
-            //simmilarityMatrices[attribute.m_Index] = simmilarity[]
+            val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
+            for (i in 0..similarity.size){
+                val attributeJMap = mutableMapOf<String, Double>()
+                for (j in 0..similarity.size){
+                    attributeJMap[attribute.value(j)] = similarity[i][j]
+                }
+                attributeIMap[attribute.value(i)] = attributeJMap
+            }
+            similarityMatrices[attribute.m_Index] = attributeIMap
 
         }
     }
 
-    fun initializeClassifiers(): List<Classifier> {
+    private fun initializeClassifiers(): List<Classifier> {
         val classifiers = mutableListOf<Classifier>()
         classifiers.add(1, RandomForest())
         classifiers.add(2, NaiveBayes())
@@ -56,7 +61,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         return classifiers
     }
 
-    fun evaluateClassifier(instances: Instances, classifier: Classifier): Pair<Array<DoubleArray>, Double> {
+    private fun evaluateClassifier(instances: Instances, classifier: Classifier): Pair<Array<DoubleArray>, Double> {
         val folds = createFolds(instances)
         val size = instances.numDistinctValues(instances.classAttribute())
         val confusionMatrix = Array(size) { DoubleArray(size) }
@@ -77,7 +82,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         return Pair(confusionMatrix, auc)
     }
 
-    fun createFolds(insts: Instances?, folds: Int = 10): List<Pair<Instances, Instances>> {
+    private fun createFolds(insts: Instances?, folds: Int = 10): List<Pair<Instances, Instances>> {
         val seed = 1L
         val rand = Random(seed)   // create seeded number generator
         val randData = Instances(insts)   // create copy of original data
@@ -93,7 +98,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
     }
 
-    fun calculateSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
+    private fun calculateSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
         val size = confusionMatrix.size
         val result = mutableListOf<DoubleArray>()
         for (row in confusionMatrix) {
@@ -114,11 +119,11 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         var count = 0
         for (i in 0..confusionMatrix.size) {
             for (j in i + 1..confusionMatrix.size) {
-                val TP = confusionMatrix[i][i]
-                val FP = confusionMatrix[j][i]
-                val FN = confusionMatrix[i][j]
-                val TN = confusionMatrix[j][j]
-                sum += TP
+                val tp = confusionMatrix[i][i]
+                val fp = confusionMatrix[j][i]
+                val fn = confusionMatrix[i][j]
+                val tn = confusionMatrix[j][j]
+                sum += tp + fp + fn + tn
                 count = 0
             }
         }
@@ -131,14 +136,10 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         return result.toEnumeration()
     }
 
-    override fun getOptions(): Array<String> {
-        return super.getOptions()
-    }
-
     override fun difference(index: Int, val1: String, val2: String): Double {
         var sum = 0.0
         for (attribute in m_Data.m_Attributes) {
-            sum += weights[index]!! * simmilarityMatrices[index]!![val1]!![val2]!!
+            sum += weights[index]!! * similarityMatrices[index]!![val1]!![val2]!!
         }
         return sum / m_Data.m_Attributes.size
     }

@@ -27,7 +27,8 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         weights = HashMap()
         similarityMatrices = HashMap()
         for (attribute in instances.enumerateAttributes()) {
-            val classifiers = initializeClassifiers()
+            val isLessThan1000 = instances.numInstances() < 1000
+            val classifiers = initializeClassifiers(isLessThan1000)
 
             val stats = instances.attributeStats(attribute.index())
 
@@ -57,14 +58,14 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         }
     }
 
-    private fun initializeClassifiers(lessThan1000instance: Boolean = false): List<Classifier> {
+    private fun initializeClassifiers(lessThan1000instances: Boolean = false): List<Classifier> {
         val classifiers = mutableListOf<Classifier>()
         classifiers.add(RandomForest())
         classifiers.add(NaiveBayes())
         classifiers.add(BayesNet())
         classifiers.add(Bagging())
         classifiers.add(SimpleLogistic())
-        if(lessThan1000instance){
+        if(lessThan1000instances){
             classifiers.add(IBk())
         }
         return classifiers

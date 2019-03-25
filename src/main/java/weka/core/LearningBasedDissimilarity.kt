@@ -1,9 +1,13 @@
 package weka.core
 
+import me.jacobrr.toEnumeration
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
 import weka.classifiers.bayes.BayesNet
 import weka.classifiers.bayes.NaiveBayes
+import weka.classifiers.functions.SimpleLogistic
+import weka.classifiers.lazy.IBk
+import weka.classifiers.meta.Bagging
 import weka.classifiers.trees.RandomForest
 import java.util.*
 import kotlin.collections.HashMap
@@ -44,7 +48,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             for (i in 0 until similarity.size){
                 val attributeJMap = mutableMapOf<String, Double>()
                 for (j in 0 until similarity.size){
-                    attributeJMap[attribute.value(j)] = similarity[i][j]
+                    attributeJMap[attribute.value(j)] = 1 - similarity[i][j]
                 }
                 attributeIMap[attribute.value(i)] = attributeJMap
             }
@@ -53,11 +57,16 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         }
     }
 
-    private fun initializeClassifiers(): List<Classifier> {
+    private fun initializeClassifiers(lessThan1000instance: Boolean = false): List<Classifier> {
         val classifiers = mutableListOf<Classifier>()
         classifiers.add(RandomForest())
         classifiers.add(NaiveBayes())
         classifiers.add(BayesNet())
+        classifiers.add(Bagging())
+        classifiers.add(SimpleLogistic())
+        if(lessThan1000instance){
+            classifiers.add(IBk())
+        }
         return classifiers
     }
 
@@ -146,22 +155,5 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
     override fun globalInfo(): String {
         return "This is the learning based measure, designed for categorical data"
-    }
-}
-
-fun <T> List<T>.toEnumeration(): Enumeration<T> {
-    return object : Enumeration<T> {
-        var count = 0
-
-        override fun hasMoreElements(): Boolean {
-            return this.count < size
-        }
-
-        override fun nextElement(): T {
-            if (this.count < size) {
-                return get(this.count++)
-            }
-            throw NoSuchElementException("List enumeration asked for more elements than present")
-        }
     }
 }

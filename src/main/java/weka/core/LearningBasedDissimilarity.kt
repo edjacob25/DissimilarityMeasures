@@ -38,22 +38,27 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             }
             instances.setClass(attribute)
 
-            val results = mutableListOf<Pair<Array<DoubleArray>, Double>>()
+            val results = mutableListOf<Triple<Array<DoubleArray>, Double, String>>()
             for (classifier in classifiers) {
                 results.add(evaluateClassifier(instances, classifier))
             }
-            val (confusion, auc) = results.maxBy { it.second }!!
+            val (confusion, auc, name) = results.maxBy { it.second }!!
+            println("The chosen classifier is $name")
             val similarity = calculateSimilarityMatrix(confusion)
             weights[attribute.index()] = auc
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
             for (i in 0 until similarity.size){
                 val attributeJMap = mutableMapOf<String, Double>()
+                print(attribute.value(i))
                 for (j in 0 until similarity.size){
                     attributeJMap[attribute.value(j)] = 1 - similarity[i][j]
+                    print("|${similarity[i][j]}|")
                 }
+                print("\n")
                 attributeIMap[attribute.value(i)] = attributeJMap
             }
             similarityMatrices[attribute.index()] = attributeIMap
+            println("Attribute ${attribute.name()} has a weight $auc}")
 
         }
     }
@@ -64,14 +69,13 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         classifiers.add(NaiveBayes())
         classifiers.add(BayesNet())
         classifiers.add(Bagging())
-        classifiers.add(SimpleLogistic())
         if(lessThan1000instances){
             classifiers.add(IBk())
         }
         return classifiers
     }
 
-    private fun evaluateClassifier(instances: Instances, classifier: Classifier): Pair<Array<DoubleArray>, Double> {
+    private fun evaluateClassifier(instances: Instances, classifier: Classifier): Triple<Array<DoubleArray>, Double, String> {
         val folds = createFolds(instances)
         val size = instances.numDistinctValues(instances.classAttribute())
         val confusionMatrix = Array(size) { DoubleArray(size) }
@@ -89,7 +93,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             }
         }
 
-        return Pair(confusionMatrix, auc)
+        return Triple(confusionMatrix, auc, classifier.javaClass.simpleName)
     }
 
     private fun createFolds(insts: Instances?, folds: Int = 10): List<Pair<Instances, Instances>> {
@@ -108,6 +112,18 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
     }
 
+    private fun printConfusionMatrix(confusionMatrix: Array<DoubleArray>){
+        for (i in 0 until confusionMatrix.size){
+            for (j in 0 until confusionMatrix.size){
+                print("|${confusionMatrix[i][j]}|")
+            }
+            print("\n")
+        }
+    }
+
+    /**
+     * Normalizes the [confusionMatrix] to a value between 0 and 1
+     */
     private fun calculateSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
         val size = confusionMatrix.size
         val result = mutableListOf<DoubleArray>()

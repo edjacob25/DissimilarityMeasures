@@ -56,6 +56,14 @@ class TestSource() {
         Assert.assertEquals(true, true)
     }
 
+    @test fun LearningSimmilarityTest(){
+        val instances = createDataset()
+        val measure = LearningBasedDissimilarity()
+        measure.instances = instances
+
+        Assert.assertEquals(true, true)
+    }
+
     // This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset
     private fun createDataset(): Instances{
         val attributes = arrayListOf(

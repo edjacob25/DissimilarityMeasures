@@ -44,15 +44,17 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             }
             val (confusion, auc, name) = results.maxBy { it.second }!!
             println("The chosen classifier is $name")
+            printConfusionMatrix(confusion)
             val similarity = calculateSimilarityMatrix(confusion)
+            val fixedSimilarity = fixSimilarity(similarity)
             weights[attribute.index()] = auc
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
             for (i in 0 until similarity.size){
                 val attributeJMap = mutableMapOf<String, Double>()
                 print(attribute.value(i))
                 for (j in 0 until similarity.size){
-                    attributeJMap[attribute.value(j)] = 1 - similarity[i][j]
-                    print("|${similarity[i][j]}|")
+                    attributeJMap[attribute.value(j)] = 1 - fixedSimilarity[i][j]
+                    print("|${fixedSimilarity[i][j]}|")
                 }
                 print("\n")
                 attributeIMap[attribute.value(i)] = attributeJMap
@@ -69,6 +71,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         classifiers.add(NaiveBayes())
         classifiers.add(BayesNet())
         classifiers.add(Bagging())
+        classifiers.add(SimpleLogistic())
         if(lessThan1000instances){
             classifiers.add(IBk())
         }
@@ -84,14 +87,15 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             classifier.buildClassifier(training)
             val eval = Evaluation(instances)
             eval.evaluateModel(classifier, testing)
-            auc += eval.weightedAreaUnderROC()
             val confusion = eval.confusionMatrix()
+            auc += computeMulticlassAUC(confusion)
             for (i in 0 until size) {
                 for (j in 0 until size) {
                     confusionMatrix[i][j] += confusion[i][j]
                 }
             }
         }
+        auc /= folds.size
 
         return Triple(confusionMatrix, auc, classifier.javaClass.simpleName)
     }
@@ -113,6 +117,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     }
 
     private fun printConfusionMatrix(confusionMatrix: Array<DoubleArray>){
+
         for (i in 0 until confusionMatrix.size){
             for (j in 0 until confusionMatrix.size){
                 print("|${confusionMatrix[i][j]}|")
@@ -140,6 +145,22 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         return result.toTypedArray()
     }
 
+    private fun fixSimilarity(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
+        val size = confusionMatrix.size
+        val confusion = Array(size) { DoubleArray(size) }
+
+        for (i in 0 until size) {
+            for (j in 0 until size) {
+                confusion[i][j] += confusionMatrix[i][j]
+            }
+        }
+        for (i in 0 until size) {
+            confusion[i][i] = confusion[i][i] + 1
+        }
+
+        return calculateSimilarityMatrix(confusion)
+    }
+
     fun computeMulticlassAUC(confusionMatrix: Array<DoubleArray>): Double {
         var sum = 0.0
         var count = 0
@@ -149,8 +170,12 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
                 val fp = confusionMatrix[j][i]
                 val fn = confusionMatrix[i][j]
                 val tn = confusionMatrix[j][j]
-                sum += tp + fp + fn + tn
-                count = 0
+                val positives = tp + fn
+                val negatives = tn + fp
+                val tprate = if (positives > 0.0) tp / positives else 1.0
+                val fprate = if (negatives > 0.0) tn / negatives else 1.0
+                sum += (tprate + fprate) / 2.0
+                count += 1
             }
         }
         return sum / count
@@ -163,6 +188,8 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     }
 
     override fun difference(index: Int, val1: String, val2: String): Double {
+        if (weights[index] == 0.0)
+            return 0.0
         return weights[index]!! * similarityMatrices[index]!![val1]!![val2]!!
     }
 

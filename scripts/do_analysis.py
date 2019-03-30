@@ -11,13 +11,49 @@ def get_number_of_clusters(file_path: str):
         for line in file:
             line_upper = line.upper()
             if line_upper.startswith("@ATTRIBUTE") and ("CLASS" in line_upper or "CLUSTER" in line_upper):
-                clusters = line.split(" ")[-1]
+                clusters = line.split(" ", 2)[-1]
                 return len(clusters.split(","))
             if line_upper.startswith("@DATA"):
                 raise Exception("Could not found Class or Cluster attribute")
 
 
-def analyze_dataset(file_path: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False):
+def remove_attribute(filepath: str, attribute: str):
+    attributes = []
+    data = []
+    permitted_indexes = []
+    with open(filepath) as file:
+        relation_name = file.readline()
+        data_processing = False
+        i = 0
+        for line in file:
+            if not data_processing:
+                line_upper = line.upper()
+                if line_upper.startswith("@ATTRIBUTE"):
+                    if attribute.upper() not in line_upper:
+                        attributes.append(line)
+                        permitted_indexes.append(i)
+                    i += 1
+                    continue
+                if line_upper.startswith("@DATA"):
+                    data_processing = True
+            else:
+                line_data = [x.lstrip() for x in line.split(',')]
+                data.append(line_data)
+
+    with open(filepath, "w") as new_file:
+        new_file.write(relation_name)
+        for item in attributes:
+            new_file.write(item)
+        new_file.write("\n")
+        new_file.write("@DATA\n")
+        for datapoint in data:
+            points = [x for i, x in enumerate(datapoint) if i in permitted_indexes]
+            result = ",".join(points)
+            new_file.write(result)
+
+
+def analyze_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False):
+    clustered_file_path = filepath.replace(".arff", "_clustered.arff")
     command = ["java", "-Xmx8192m"]
     if not no_classpath:
         java_classpath = "/mnt/c/Program Files/Weka-3-9/weka.jar:/home/jacob/wekafiles/packages" \
@@ -30,17 +66,17 @@ def analyze_dataset(file_path: str, classpath: str = None, no_classpath: bool = 
     command.append("weka.filters.unsupervised.attribute.AddCluster")
     command.append("-W")
 
-    num_clusters = get_number_of_clusters(file_path)
+    num_clusters = get_number_of_clusters(filepath)
     num_procs = multiprocessing.cpu_count()
     distance_function = "\"weka.core.LearningBasedDissimilarity -R first-last\""
     clusterer = "weka.clusterers.CategoricalKMeans -init 1 -max-candidates 100 -periodic-pruning 10000 " \
         f"-min-density 2.0 -t1 -1.25 -t2 -1.0 -N {num_clusters} -A {distance_function} -I 500 " \
-        f"-num-slots {math.floor(num_procs/3)} -S 10"
+        f"-num-slots {math.floor(num_procs / 3)} -S 10"
     command.append(clusterer)
     command.append("-i")
-    command.append(file_path)
+    command.append(filepath)
     command.append("-o")
-    command.append(file_path.replace(".arff", "_clustered.arff"))
+    command.append(clustered_file_path)
     command.append("-I")
     command.append("Last")
 
@@ -51,9 +87,12 @@ def analyze_dataset(file_path: str, classpath: str = None, no_classpath: bool = 
         print(result.stdout.decode("utf-8"))
 
     if "Exception" not in result.stderr.decode("utf-8"):
-        print(f"Finished analyzing dataset {file_path}")
+        remove_attribute(clustered_file_path, "Class")
+        print(f"Finished analyzing dataset {filepath}")
     else:
-        raise Exception(f"There was a error running weka with the file {file_path.rsplit('/')[-1]} and the " +
+        if os.path.exists(clustered_file_path):
+            os.remove(clustered_file_path)
+        raise Exception(f"There was a error running weka with the file {filepath.rsplit('/')[-1]} and the " +
                         f"following command {' '.join(result.args)}")
 
 

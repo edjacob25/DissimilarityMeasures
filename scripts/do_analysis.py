@@ -6,8 +6,8 @@ import subprocess
 from shutil import copyfile
 
 
-def get_number_of_clusters(file_path: str):
-    with open(file_path) as file:
+def get_number_of_clusters(filepath: str):
+    with open(filepath) as file:
         for line in file:
             line_upper = line.upper()
             if line_upper.startswith("@ATTRIBUTE") and ("CLASS" in line_upper or "CLUSTER" in line_upper):

@@ -3,6 +3,7 @@ import math
 import multiprocessing
 import os
 import subprocess
+from openpyxl import Workbook
 from shutil import copyfile
 
 
@@ -109,7 +110,7 @@ def copy_files(filepath: str):
     return new_filepath, new_clustered_filepath
 
 
-def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None):
+def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None) -> str:
     command = ["MeasuresComparator.exe", "-c", clustered_filepath, "-r", filepath]
     if exe_path is not None:
         command[0] = exe_path
@@ -132,7 +133,23 @@ if not os.path.isdir(args.directory):
     print("The selected path is not a directory")
     exit(1)
 
+workbook = Workbook()
+ws = workbook.active
+ws['B1'] = "Option 1"
+ws.merge_cells('B1:C1')
+ws['D1'] = "Option 2"
+ws.merge_cells('D1:E1')
+ws['F1'] = "Option 3"
+ws.merge_cells('F1:G1')
+ws['H1'] = "Option 4"
+ws.merge_cells('H1:I1')
+ws['J1'] = "Option 5"
+ws.merge_cells('J1:K1')
+ws['L1'] = "Option 6"
+ws.merge_cells('L1:M1')
+
 root_dir = os.path.abspath(args.directory)
+# index = 2
 # for item in os.listdir(root_dir):
 #     if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
 #         item = os.path.join(root_dir, item)
@@ -153,3 +170,7 @@ f_measure = get_f_measure(new_filepath, new_clustered_filepath,
                           exe_path="/home/jacob/Projects/MeasuresComparator/MeasuresComparator/bin/Release"
                                    "/netcoreapp2.1/linux-x64/publish/MeasuresComparator")
 print(f_measure)
+ws.cell(row=2, column=1, value="cars")
+ws.cell(row=2, column=2, value=f_measure.rstrip())
+print("Going to save")
+workbook.save(filename=f"{args.directory}/Results.xlsx")

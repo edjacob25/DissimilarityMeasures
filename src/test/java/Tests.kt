@@ -1,7 +1,6 @@
 package tests
 
 import org.junit.Assert
-import weka.clusterers.CategoricalKMeans
 import weka.core.*
 import kotlin.test.assertEquals
 import org.junit.Test as test

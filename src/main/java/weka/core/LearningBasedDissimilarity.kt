@@ -44,9 +44,8 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             }
             val (confusion, auc, name) = results.maxBy { it.second }!!
             println("The chosen classifier is $name")
-            printConfusionMatrix(confusion)
-            val similarity = calculateSimilarityMatrix(confusion)
-            val fixedSimilarity = fixSimilarity(similarity)
+            val similarity = normalizeMatrix(confusion)
+            val fixedSimilarity = fixSimilarityMatrix(similarity)
             weights[attribute.index()] = auc
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
             for (i in 0 until similarity.size){
@@ -127,12 +126,12 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     }
 
     /**
-     * Normalizes the [confusionMatrix] to a value between 0 and 1
+     * Normalizes the [matrix] to a value between 0 and 1
      */
-    private fun calculateSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
-        val size = confusionMatrix.size
+    private fun normalizeMatrix(matrix: Array<DoubleArray>): Array<DoubleArray> {
+        val size = matrix.size
         val result = mutableListOf<DoubleArray>()
-        for (row in confusionMatrix) {
+        for (row in matrix) {
             val sum = row.sum()
             val newRow = DoubleArray(size)
             var i = 0
@@ -145,20 +144,13 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         return result.toTypedArray()
     }
 
-    private fun fixSimilarity(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
+    private fun fixSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
         val size = confusionMatrix.size
-        val confusion = Array(size) { DoubleArray(size) }
-
         for (i in 0 until size) {
-            for (j in 0 until size) {
-                confusion[i][j] += confusionMatrix[i][j]
-            }
-        }
-        for (i in 0 until size) {
-            confusion[i][i] = confusion[i][i] + 1
+            confusionMatrix[i][i] = confusionMatrix[i][i] + 1
         }
 
-        return calculateSimilarityMatrix(confusion)
+        return normalizeMatrix(confusionMatrix)
     }
 
     fun computeMulticlassAUC(confusionMatrix: Array<DoubleArray>): Double {

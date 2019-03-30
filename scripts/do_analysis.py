@@ -52,7 +52,7 @@ def remove_attribute(filepath: str, attribute: str):
             new_file.write(result)
 
 
-def analyze_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False):
+def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False):
     clustered_file_path = filepath.replace(".arff", "_clustered.arff")
     command = ["java", "-Xmx8192m"]
     if not no_classpath:
@@ -88,7 +88,7 @@ def analyze_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
 
     if "Exception" not in result.stderr.decode("utf-8"):
         remove_attribute(clustered_file_path, "Class")
-        print(f"Finished analyzing dataset {filepath}")
+        print(f"Finished clustering dataset {filepath}")
     else:
         if os.path.exists(clustered_file_path):
             os.remove(clustered_file_path)
@@ -115,9 +115,9 @@ def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None):
         command[0] = exe_path
     result = subprocess.run(command, stdout=subprocess.PIPE)
     if result.returncode != 0:
-        print("Error")
+        print(f"Could not get F-Measure\nError -> {result.stdout.decode('utf-8')}")
     else:
-        return result.stdout
+        return result.stdout.decode('utf-8')
 
 
 parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')
@@ -137,8 +137,8 @@ root_dir = os.path.abspath(args.directory)
 #     if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
 #         item = os.path.join(root_dir, item)
 #         try:
-#             analyze_dataset(item, verbose=args.verbose, classpath=args.cp)
-#             filepath, clustered_filepath = copy_files(item)
+#             cluster_dataset(item, verbose=args.verbose, classpath=args.cp)
+#             new_filepath, new_clustered_filepath = copy_files(item)
 #             get_f_measure(filepath, clustered_filepath)
 #         except Exception as exc:
 #             print(exc)
@@ -147,4 +147,9 @@ root_dir = os.path.abspath(args.directory)
 #         finally:
 #             print("\n\n")
 
-analyze_dataset("/mnt/f/Datasets/cars.arff", verbose= args.verbose)
+cluster_dataset("/mnt/f/Datasets/cars.arff", verbose=args.verbose)
+new_filepath, new_clustered_filepath = copy_files("/mnt/f/Datasets/cars.arff")
+f_measure = get_f_measure(new_filepath, new_clustered_filepath,
+                          exe_path="/home/jacob/Projects/MeasuresComparator/MeasuresComparator/bin/Release"
+                                   "/netcoreapp2.1/linux-x64/publish/MeasuresComparator")
+print(f_measure)

@@ -1,8 +1,12 @@
 import argparse
+import configparser
+import json
 import math
 import multiprocessing
 import os
+import requests
 import subprocess
+import time
 from openpyxl import Workbook
 from shutil import copyfile
 
@@ -122,6 +126,14 @@ def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None) 
         return result.stdout.decode('utf-8')
 
 
+def send_notification(message: str, title: str):
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    data = {"body":message, "title": title, "type": "note"}
+    headers = {"Content-Type": "application/json", "Access-Token": config["SECRETS"]["Pushbullet_token"]}
+    r = requests.post("https://api.pushbullet.com/v2/pushes", headers=headers, data=json.dumps(data))
+
+
 parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')
 parser.add_argument('directory', help="Directory in which the cleaned datasets are")
 parser.add_argument('-cp', help="Classpath for the weka invocation, needs to contain the weka.jar file and probably "
@@ -150,6 +162,8 @@ ws.merge_cells('J1:K1')
 ws['L1'] = "Option 6"
 ws.merge_cells('L1:M1')
 
+start = time.time()
+
 root_dir = os.path.abspath(args.directory)
 index = 2
 for item in os.listdir(root_dir):
@@ -159,8 +173,12 @@ for item in os.listdir(root_dir):
             cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp)
             new_filepath, new_clustered_filepath = copy_files(item_fullpath)
             f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path)
-            ws.cell(row=2, column=1, value=item)
-            ws.cell(row=2, column=2, value=f_measure.rstrip())
+            ws.cell(row=index, column=1, value=item)
+            ws.cell(row=index, column=2, value=f_measure.rstrip())
+            index += 1
+        except KeyboardInterrupt:
+            print(f"The analysis of the file {item} was requested to be finished by using Ctrl-C")
+            continue
         except Exception as exc:
             print(exc)
             print(f"Skipping file {item}")
@@ -168,6 +186,7 @@ for item in os.listdir(root_dir):
         finally:
             print("\n\n")
 
+end = time.end()
 # cluster_dataset("/mnt/f/Datasets/cars.arff", verbose=args.verbose)
 # new_filepath, new_clustered_filepath = copy_files("/mnt/f/Datasets/cars.arff")
 # f_measure = get_f_measure(new_filepath, new_clustered_filepath,
@@ -178,3 +197,4 @@ for item in os.listdir(root_dir):
 # ws.cell(row=2, column=2, value=f_measure.rstrip())
 # print("Going to save")
 workbook.save(filename=f"{args.directory}/Results.xlsx")
+send_notification(f"It took {end - start} and processed {index - 2} datasets","Analysis finished")

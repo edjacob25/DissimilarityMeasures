@@ -100,12 +100,24 @@ def copy_files(filepath: str):
     path, file = filepath.rsplit("/", 1)
     filename = file.split(".")[0]
     os.mkdir(f"{path}/{filename}")
-    copyfile(filepath, f"{path}/{filename}/{file}")
-    copyfile(f"{path}/{filename}_clustered.arff", f"{path}/{filename}/{filename}.clus")
+    new_filepath = f"{path}/{filename}/{file}"
+    copyfile(filepath, new_filepath)
+
+    new_clustered_filepath = f"{path}/{filename}/{filename}.clus"
+    copyfile(f"{path}/{filename}_clustered.arff", new_clustered_filepath)
+
+    return new_filepath, new_clustered_filepath
 
 
-def get_f_measure(filepath: str):
-    pass
+def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None):
+    command = ["MeasuresComparator.exe", "-c", clustered_filepath, "-r", filepath]
+    if exe_path is not None:
+        command[0] = exe_path
+    result = subprocess.run(command, stdout=subprocess.PIPE)
+    if result.returncode != 0:
+        print("Error")
+    else:
+        return result.stdout
 
 
 parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')
@@ -121,20 +133,18 @@ if not os.path.isdir(args.directory):
     exit(1)
 
 root_dir = os.path.abspath(args.directory)
-for item in os.listdir(root_dir):
-    if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
+# for item in os.listdir(root_dir):
+#     if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
+#         item = os.path.join(root_dir, item)
+#         try:
+#             analyze_dataset(item, verbose=args.verbose, classpath=args.cp)
+#             filepath, clustered_filepath = copy_files(item)
+#             get_f_measure(filepath, clustered_filepath)
+#         except Exception as exc:
+#             print(exc)
+#             print(f"Skipping file {item}")
+#             continue
+#         finally:
+#             print("\n\n")
 
-        item = os.path.join(root_dir, item)
-        try:
-            pass
-            analyze_dataset(item, verbose=args.verbose, classpath=args.cp)
-            # copy_files(item)
-
-        except Exception as exc:
-            print(exc)
-            print(f"Skipping file {item}")
-            continue
-        finally:
-            print("\n\n")
-
-# analyze_dataset("/mnt/f/Datasets/car.arff", verbose=True)
+analyze_dataset("/mnt/f/Datasets/cars.arff", verbose= args.verbose)

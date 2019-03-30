@@ -117,6 +117,7 @@ def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None) 
     result = subprocess.run(command, stdout=subprocess.PIPE)
     if result.returncode != 0:
         print(f"Could not get F-Measure\nError -> {result.stdout.decode('utf-8')}")
+        raise Exception("Could not calculate f-measure")
     else:
         return result.stdout.decode('utf-8')
 
@@ -126,6 +127,7 @@ parser.add_argument('directory', help="Directory in which the cleaned datasets a
 parser.add_argument('-cp', help="Classpath for the weka invocation, needs to contain the weka.jar file and probably "
                                 "the jar of the measure ")
 parser.add_argument("-v", "--verbose", help="Show the output of the weka commands", action='store_true')
+parser.add_argument("-f", "--measure-calc", help="Path to the f-measure calculator", dest='measure_calculator_path')
 
 args = parser.parse_args()
 
@@ -149,28 +151,30 @@ ws['L1'] = "Option 6"
 ws.merge_cells('L1:M1')
 
 root_dir = os.path.abspath(args.directory)
-# index = 2
-# for item in os.listdir(root_dir):
-#     if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
-#         item = os.path.join(root_dir, item)
-#         try:
-#             cluster_dataset(item, verbose=args.verbose, classpath=args.cp)
-#             new_filepath, new_clustered_filepath = copy_files(item)
-#             get_f_measure(filepath, clustered_filepath)
-#         except Exception as exc:
-#             print(exc)
-#             print(f"Skipping file {item}")
-#             continue
-#         finally:
-#             print("\n\n")
+index = 2
+for item in os.listdir(root_dir):
+    if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
+        item_fullpath = os.path.join(root_dir, item)
+        try:
+            cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp)
+            new_filepath, new_clustered_filepath = copy_files(item_fullpath)
+            f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path)
+            ws.cell(row=2, column=1, value=item)
+            ws.cell(row=2, column=2, value=f_measure.rstrip())
+        except Exception as exc:
+            print(exc)
+            print(f"Skipping file {item}")
+            continue
+        finally:
+            print("\n\n")
 
-cluster_dataset("/mnt/f/Datasets/cars.arff", verbose=args.verbose)
-new_filepath, new_clustered_filepath = copy_files("/mnt/f/Datasets/cars.arff")
-f_measure = get_f_measure(new_filepath, new_clustered_filepath,
-                          exe_path="/home/jacob/Projects/MeasuresComparator/MeasuresComparator/bin/Release"
-                                   "/netcoreapp2.1/linux-x64/publish/MeasuresComparator")
-print(f_measure)
-ws.cell(row=2, column=1, value="cars")
-ws.cell(row=2, column=2, value=f_measure.rstrip())
-print("Going to save")
+# cluster_dataset("/mnt/f/Datasets/cars.arff", verbose=args.verbose)
+# new_filepath, new_clustered_filepath = copy_files("/mnt/f/Datasets/cars.arff")
+# f_measure = get_f_measure(new_filepath, new_clustered_filepath,
+#                           exe_path="/home/jacob/Projects/MeasuresComparator/MeasuresComparator/bin/Release"
+#                                    "/netcoreapp2.1/linux-x64/publish/MeasuresComparator")
+# print(f_measure)
+# ws.cell(row=2, column=1, value="cars")
+# ws.cell(row=2, column=2, value=f_measure.rstrip())
+# print("Going to save")
 workbook.save(filename=f"{args.directory}/Results.xlsx")

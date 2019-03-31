@@ -57,7 +57,9 @@ def remove_attribute(filepath: str, attribute: str):
             new_file.write(result)
 
 
-def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False):
+def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False,
+                    strategy: str = "A"):
+
     clustered_file_path = filepath.replace(".arff", "_clustered.arff")
     command = ["java", "-Xmx8192m"]
     if not no_classpath:
@@ -73,7 +75,7 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
 
     num_clusters = get_number_of_clusters(filepath)
     num_procs = multiprocessing.cpu_count()
-    distance_function = "\"weka.core.LearningBasedDissimilarity -R first-last\""
+    distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} \""
     clusterer = "weka.clusterers.CategoricalKMeans -init 1 -max-candidates 100 -periodic-pruning 10000 " \
         f"-min-density 2.0 -t1 -1.25 -t2 -1.0 -N {num_clusters} -A {distance_function} -I 500 " \
         f"-num-slots {math.floor(num_procs / 3)} -S 10"
@@ -85,11 +87,14 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     command.append("-I")
     command.append("Last")
 
+    start = time.time()
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    end = time.time()
 
     print(result.stderr.decode("utf-8"))
     if verbose:
         print(result.stdout.decode("utf-8"))
+        print(f"Analyzing dataset {filepath} took {end - start}")
 
     if "Exception" not in result.stderr.decode("utf-8"):
         remove_attribute(clustered_file_path, "Class")
@@ -101,14 +106,14 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
                         f"following command {' '.join(result.args)}")
 
 
-def copy_files(filepath: str):
+def copy_files(filepath: str, strategy: str = ""):
     path, file = filepath.rsplit("/", 1)
     filename = file.split(".")[0]
-    os.mkdir(f"{path}/{filename}")
-    new_filepath = f"{path}/{filename}/{file}"
+    os.mkdir(f"{path}/{filename}{strategy}")
+    new_filepath = f"{path}/{filename}{strategy}/{file}"
     copyfile(filepath, new_filepath)
 
-    new_clustered_filepath = f"{path}/{filename}/{filename}.clus"
+    new_clustered_filepath = f"{path}/{filename}{strategy}/{filename}.clus"
     copyfile(f"{path}/{filename}_clustered.arff", new_clustered_filepath)
 
     return new_filepath, new_clustered_filepath
@@ -123,6 +128,7 @@ def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None) 
         print(f"Could not get F-Measure\nError -> {result.stdout.decode('utf-8')}")
         raise Exception("Could not calculate f-measure")
     else:
+        print(f"Finished getting f-measure for {filepath}")
         return result.stdout.decode('utf-8')
 
 
@@ -149,18 +155,16 @@ if not os.path.isdir(args.directory):
 
 workbook = Workbook()
 ws = workbook.active
-ws['B1'] = "Option 1"
+ws['B1'] = "Strategy A"
 ws.merge_cells('B1:C1')
-ws['D1'] = "Option 2"
+ws['D1'] = "Strategy B"
 ws.merge_cells('D1:E1')
-ws['F1'] = "Option 3"
+ws['F1'] = "Strategy C"
 ws.merge_cells('F1:G1')
-ws['H1'] = "Option 4"
+ws['H1'] = "Strategy D"
 ws.merge_cells('H1:I1')
-ws['J1'] = "Option 5"
+ws['J1'] = "Strategy E"
 ws.merge_cells('J1:K1')
-ws['L1'] = "Option 6"
-ws.merge_cells('L1:M1')
 
 start = time.time()
 
@@ -170,11 +174,15 @@ for item in os.listdir(root_dir):
     if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
         item_fullpath = os.path.join(root_dir, item)
         try:
-            cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp)
-            new_filepath, new_clustered_filepath = copy_files(item_fullpath)
-            f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path)
+            column = 2
             ws.cell(row=index, column=1, value=item)
-            ws.cell(row=index, column=2, value=f_measure.rstrip())
+            for strategy in ["A", "B", "C", "D", "E"]:
+                cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp, strategy=strategy)
+                new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy)
+                f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path)
+                ws.cell(row=index, column=column, value=f_measure.rstrip())
+                column += 2
+
             index += 1
         except KeyboardInterrupt:
             print(f"The analysis of the file {item} was requested to be finished by using Ctrl-C")
@@ -186,7 +194,7 @@ for item in os.listdir(root_dir):
         finally:
             print("\n\n")
 
-end = time.end()
+end = time.time()
 # cluster_dataset("/mnt/f/Datasets/cars.arff", verbose=args.verbose)
 # new_filepath, new_clustered_filepath = copy_files("/mnt/f/Datasets/cars.arff")
 # f_measure = get_f_measure(new_filepath, new_clustered_filepath,

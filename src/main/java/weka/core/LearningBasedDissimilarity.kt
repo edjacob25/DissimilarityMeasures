@@ -20,6 +20,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
     private lateinit var weights: HashMap<Int, Double>
     private lateinit var similarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
+    protected var strategy = "A"
 
     private fun trainClassifiers(insts: Instances?) {
         val instances = Instances(insts)
@@ -48,10 +49,10 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             val fixedSimilarity = fixSimilarityMatrix(similarity)
             weights[attribute.index()] = auc
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
-            for (i in 0 until similarity.size){
+            for (i in 0 until similarity.size) {
                 val attributeJMap = mutableMapOf<String, Double>()
                 print(attribute.value(i))
-                for (j in 0 until similarity.size){
+                for (j in 0 until similarity.size) {
                     attributeJMap[attribute.value(j)] = 1 - fixedSimilarity[i][j]
                     print("|${fixedSimilarity[i][j]}|")
                 }
@@ -71,13 +72,16 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         classifiers.add(BayesNet())
         classifiers.add(Bagging())
         classifiers.add(SimpleLogistic())
-        if(lessThan1000instances){
+        if (lessThan1000instances) {
             classifiers.add(IBk())
         }
         return classifiers
     }
 
-    private fun evaluateClassifier(instances: Instances, classifier: Classifier): Triple<Array<DoubleArray>, Double, String> {
+    private fun evaluateClassifier(
+        instances: Instances,
+        classifier: Classifier
+    ): Triple<Array<DoubleArray>, Double, String> {
         val folds = createFolds(instances)
         val size = instances.numDistinctValues(instances.classAttribute())
         val confusionMatrix = Array(size) { DoubleArray(size) }
@@ -115,10 +119,10 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
     }
 
-    private fun printConfusionMatrix(confusionMatrix: Array<DoubleArray>){
+    private fun printConfusionMatrix(confusionMatrix: Array<DoubleArray>) {
 
-        for (i in 0 until confusionMatrix.size){
-            for (j in 0 until confusionMatrix.size){
+        for (i in 0 until confusionMatrix.size) {
+            for (j in 0 until confusionMatrix.size) {
                 print("|${confusionMatrix[i][j]}|")
             }
             print("\n")
@@ -146,6 +150,43 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
     private fun fixSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
         val size = confusionMatrix.size
+
+        if (strategy == "B") {
+            for (i in 0 until size) {
+                confusionMatrix[i][i] += 2.0
+            }
+            return normalizeMatrix(confusionMatrix)
+        }
+        if (strategy == "C") {
+            for (i in 0 until size) {
+                confusionMatrix[i][i] = 1.0
+            }
+            return confusionMatrix
+
+        }
+        if (strategy == "C") {
+            for (i in 0 until size) {
+                confusionMatrix[i][i] = confusionMatrix[i][i] + 1
+            }
+            val result = normalizeMatrix(confusionMatrix)
+            for (i in 0 until size) {
+                result[i][i] = 1.0
+            }
+            return result
+        }
+        if (strategy == "C") {
+            for (i in 0 until size) {
+                confusionMatrix[i][i] = confusionMatrix[i][i] + 2
+            }
+            val result = normalizeMatrix(confusionMatrix)
+            for (i in 0 until size) {
+                result[i][i] = 1.0
+            }
+            return result
+        }
+
+        // Default
+
         for (i in 0 until size) {
             confusionMatrix[i][i] = confusionMatrix[i][i] + 1
         }
@@ -173,12 +214,6 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         return sum / count
     }
 
-    override fun listOptions(): Enumeration<Option> {
-        val result = super.listOptions().toList().toMutableList()
-        result.add(Option("The classifier to be used", "C", 1, "-C"))
-        return result.toEnumeration()
-    }
-
     override fun difference(index: Int, val1: String, val2: String): Double {
         if (weights[index] == 0.0)
             return 0.0
@@ -192,4 +227,26 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     override fun globalInfo(): String {
         return "This is the learning based measure, designed for categorical data"
     }
+
+    override fun listOptions(): Enumeration<Option> {
+        val result = super.listOptions().toList().toMutableList()
+        result.add(Option("The strategy to be used", "S", 1, "-S"))
+        return result.toEnumeration()
+    }
+
+    override fun setOptions(options: Array<out String>?) {
+        super.setOptions(options)
+        val str = Utils.getOption('S', options)
+        if (str.isNotEmpty()) {
+            strategy = str
+        }
+    }
+
+    override fun getOptions(): Array<String> {
+        val result = super.getOptions().toMutableList()
+        result.add("-S")
+        result.add(strategy)
+        return result.toTypedArray()
+    }
+
 }

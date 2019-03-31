@@ -207,7 +207,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         return 1.0
     }
 
-    fun computeMulticlassAUC(confusionMatrix: Array<DoubleArray>): Double {
+    private fun computeMulticlassAUC(confusionMatrix: Array<DoubleArray>): Double {
         var sum = 0.0
         var count = 0
         for (i in 0 until confusionMatrix.size) {
@@ -246,13 +246,13 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         result.add(
             Option(
                 "The strategy to be used. Options are A, B, C, D, E. Defaults to A",
-                "S", 1, "-S"
+                "S", 1, "-S <strategy>"
             )
         )
         result.add(
             Option(
                 "Which weight is going to be used. Options are K for kappa, A for Auc and N for a " +
-                        "uniform weight. Defaults to N", "w", 1, "-w"
+                        "uniform weight. Defaults to N", "w", 1, "-w <weight>"
             )
         )
         return result.toEnumeration()

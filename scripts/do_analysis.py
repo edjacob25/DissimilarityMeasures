@@ -98,7 +98,7 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
 
     if "Exception" not in result.stderr.decode("utf-8"):
         remove_attribute(clustered_file_path, "Class")
-        print(f"Finished clustering dataset {filepath}")
+        print(f"Finished clustering dataset {filepath} with strategy {strategy}")
     else:
         if os.path.exists(clustered_file_path):
             os.remove(clustered_file_path)
@@ -124,20 +124,21 @@ def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None) 
     if exe_path is not None:
         command[0] = exe_path
     result = subprocess.run(command, stdout=subprocess.PIPE)
+    text_result = result.stdout.decode('utf-8')
     if result.returncode != 0:
-        print(f"Could not get F-Measure\nError -> {result.stdout.decode('utf-8')}")
+        print(f"Could not get F-Measure\nError -> {text_result}")
         raise Exception("Could not calculate f-measure")
     else:
-        print(f"Finished getting f-measure for {filepath}")
-        return result.stdout.decode('utf-8')
+        print(f"Finished getting f-measure for {filepath}, f-measure -> {text_result}")
+        return text_result
 
 
 def send_notification(message: str, title: str):
     config = configparser.ConfigParser()
     config.read("config.ini")
-    data = {"body":message, "title": title, "type": "note"}
+    data = {"body": message, "title": title, "type": "note"}
     headers = {"Content-Type": "application/json", "Access-Token": config["SECRETS"]["Pushbullet_token"]}
-    r = requests.post("https://api.pushbullet.com/v2/pushes", headers=headers, data=json.dumps(data))
+    requests.post("https://api.pushbullet.com/v2/pushes", headers=headers, data=json.dumps(data))
 
 
 parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')
@@ -180,7 +181,7 @@ for item in os.listdir(root_dir):
                 cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp, strategy=strategy)
                 new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy)
                 f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path)
-                ws.cell(row=index, column=column, value=f_measure.rstrip())
+                ws.cell(row=index, column=column, value=float(f_measure))
                 column += 2
 
             index += 1
@@ -195,14 +196,5 @@ for item in os.listdir(root_dir):
             print("\n\n")
 
 end = time.time()
-# cluster_dataset("/mnt/f/Datasets/cars.arff", verbose=args.verbose)
-# new_filepath, new_clustered_filepath = copy_files("/mnt/f/Datasets/cars.arff")
-# f_measure = get_f_measure(new_filepath, new_clustered_filepath,
-#                           exe_path="/home/jacob/Projects/MeasuresComparator/MeasuresComparator/bin/Release"
-#                                    "/netcoreapp2.1/linux-x64/publish/MeasuresComparator")
-# print(f_measure)
-# ws.cell(row=2, column=1, value="cars")
-# ws.cell(row=2, column=2, value=f_measure.rstrip())
-# print("Going to save")
 workbook.save(filename=f"{args.directory}/Results.xlsx")
-send_notification(f"It took {end - start} and processed {index - 2} datasets","Analysis finished")
+send_notification(f"It took {end - start} and processed {index - 2} datasets", "Analysis finished")

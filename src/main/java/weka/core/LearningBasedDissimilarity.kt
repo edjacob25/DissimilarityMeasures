@@ -21,10 +21,12 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     private lateinit var weights: HashMap<Int, Double>
     private lateinit var similarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
     protected var strategy = "A"
+    protected var weightStyle = "N"
 
     private fun trainClassifiers(insts: Instances?) {
         val instances = Instances(insts)
-
+        println("Chosen strategy is $strategy")
+        println("Chosen weight style is $weightStyle")
         weights = HashMap()
         similarityMatrices = HashMap()
         for (attribute in instances.enumerateAttributes()) {
@@ -35,19 +37,21 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
             if (attribute.numValues() > 50 || !stats.nominalCounts.all { it > 0 }) {
                 weights[attribute.index()] = 0.0
+                println("Attribute ${attribute.name()} has a weight 0, meaning it won't be taken on account when calculating the dissimilarity")
                 continue
             }
             instances.setClass(attribute)
 
-            val results = mutableListOf<Triple<Array<DoubleArray>, Double, String>>()
+            val results = mutableListOf<ClassifierResult>()
             for (classifier in classifiers) {
                 results.add(evaluateClassifier(instances, classifier))
             }
-            val (confusion, auc, name) = results.maxBy { it.second }!!
+            val (confusion, auc, kappa, name) = results.maxBy { it.auc }!!
             println("The chosen classifier is $name")
             val similarity = normalizeMatrix(confusion)
             val fixedSimilarity = fixSimilarityMatrix(similarity)
-            weights[attribute.index()] = auc
+            val weight = decideWeight(auc, kappa)
+            weights[attribute.index()] = weight
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
             for (i in 0 until similarity.size) {
                 val attributeJMap = mutableMapOf<String, Double>()
@@ -60,7 +64,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
                 attributeIMap[attribute.value(i)] = attributeJMap
             }
             similarityMatrices[attribute.index()] = attributeIMap
-            println("Attribute ${attribute.name()} has a weight $auc}")
+            println("Attribute ${attribute.name()} has a weight $weight")
 
         }
     }
@@ -78,20 +82,19 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         return classifiers
     }
 
-    private fun evaluateClassifier(
-        instances: Instances,
-        classifier: Classifier
-    ): Triple<Array<DoubleArray>, Double, String> {
+    private fun evaluateClassifier(instances: Instances, classifier: Classifier): ClassifierResult {
         val folds = createFolds(instances)
         val size = instances.numDistinctValues(instances.classAttribute())
         val confusionMatrix = Array(size) { DoubleArray(size) }
         var auc = 0.0
+        var kappa = 0.0
         for ((training, testing) in folds) {
             classifier.buildClassifier(training)
             val eval = Evaluation(instances)
             eval.evaluateModel(classifier, testing)
             val confusion = eval.confusionMatrix()
             auc += computeMulticlassAUC(confusion)
+            kappa += eval.kappa()
             for (i in 0 until size) {
                 for (j in 0 until size) {
                     confusionMatrix[i][j] += confusion[i][j]
@@ -99,8 +102,8 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             }
         }
         auc /= folds.size
-
-        return Triple(confusionMatrix, auc, classifier.javaClass.simpleName)
+        kappa /= folds.size
+        return ClassifierResult(confusionMatrix, auc, kappa, classifier.javaClass.simpleName)
     }
 
     private fun createFolds(insts: Instances?, folds: Int = 10): List<Pair<Instances, Instances>> {
@@ -164,7 +167,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             return confusionMatrix
 
         }
-        if (strategy == "C") {
+        if (strategy == "D") {
             for (i in 0 until size) {
                 confusionMatrix[i][i] = confusionMatrix[i][i] + 1
             }
@@ -174,7 +177,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             }
             return result
         }
-        if (strategy == "C") {
+        if (strategy == "E") {
             for (i in 0 until size) {
                 confusionMatrix[i][i] = confusionMatrix[i][i] + 2
             }
@@ -192,6 +195,16 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         }
 
         return normalizeMatrix(confusionMatrix)
+    }
+
+    private fun decideWeight(auc: Double, kappa: Double): Double {
+        if (weightStyle == "A") {
+            return auc
+        }
+        if (weightStyle == "K") {
+            return kappa
+        }
+        return 1.0
     }
 
     fun computeMulticlassAUC(confusionMatrix: Array<DoubleArray>): Double {
@@ -230,15 +243,30 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
     override fun listOptions(): Enumeration<Option> {
         val result = super.listOptions().toList().toMutableList()
-        result.add(Option("The strategy to be used", "S", 1, "-S"))
+        result.add(
+            Option(
+                "The strategy to be used. Options are A, B, C, D, E. Defaults to A",
+                "S", 1, "-S"
+            )
+        )
+        result.add(
+            Option(
+                "Which weight is going to be used. Options are K for kappa, A for Auc and N for a " +
+                        "uniform weight. Defaults to N", "w", 1, "-w"
+            )
+        )
         return result.toEnumeration()
     }
 
     override fun setOptions(options: Array<out String>?) {
         super.setOptions(options)
-        val str = Utils.getOption('S', options)
-        if (str.isNotEmpty()) {
-            strategy = str
+        val strat = Utils.getOption('S', options)
+        if (strat.isNotEmpty()) {
+            strategy = strat
+        }
+        val weight = Utils.getOption('w', options)
+        if (weight.isNotEmpty()) {
+            weightStyle = weight
         }
     }
 
@@ -246,7 +274,16 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         val result = super.getOptions().toMutableList()
         result.add("-S")
         result.add(strategy)
+        result.add("-w")
+        result.add(weightStyle)
         return result.toTypedArray()
     }
+
+    private data class ClassifierResult(
+        val confusionMatrix: Array<DoubleArray>,
+        val auc: Double,
+        val kappa: Double,
+        val name: String
+    )
 
 }

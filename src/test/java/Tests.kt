@@ -58,6 +58,7 @@ class TestSource() {
     @test fun LearningSimmilarityTest(){
         val instances = createDataset()
         val measure = LearningBasedDissimilarity()
+        measure.options = arrayOf("-S", "B", "-w", "K")
         measure.instances = instances
 
         Assert.assertEquals(true, true)

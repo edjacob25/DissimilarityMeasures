@@ -64,6 +64,8 @@ class TestSource() {
         Assert.assertEquals(true, true)
     }
 
+    // TODO: Add method to read the dataset from a file to use in the tests above
+
     // This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset
     private fun createDataset(): Instances{
         val attributes = arrayListOf(

@@ -57,6 +57,8 @@ def remove_attribute(filepath: str, attribute: str):
             new_file.write(result)
 
 
+# TODO: Add option to run other dissimilarity measures
+# TODO: Add option to read classpath from the config file
 def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False,
                     strategy: str = "A"):
 
@@ -94,7 +96,7 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     print(result.stderr.decode("utf-8"))
     if verbose:
         print(result.stdout.decode("utf-8"))
-        print(f"Analyzing dataset {filepath} took {end - start}")
+        print(f"Analyzing dataset {filepath} with strategy {strategy} took {end - start}")
 
     if "Exception" not in result.stderr.decode("utf-8"):
         remove_attribute(clustered_file_path, "Class")
@@ -147,9 +149,12 @@ parser.add_argument('-cp', help="Classpath for the weka invocation, needs to con
                                 "the jar of the measure ")
 parser.add_argument("-v", "--verbose", help="Show the output of the weka commands", action='store_true')
 parser.add_argument("-f", "--measure-calc", help="Path to the f-measure calculator", dest='measure_calculator_path')
+parser.add_argument("-s", "--save", help="Path to the f-measure calculator", dest='store_true')
+# TODO: Actually save the output of the commands
 
 args = parser.parse_args()
 
+# TODO: Read a single file
 if not os.path.isdir(args.directory):
     print("The selected path is not a directory")
     exit(1)
@@ -197,4 +202,5 @@ for item in os.listdir(root_dir):
 
 end = time.time()
 workbook.save(filename=f"{args.directory}/Results.xlsx")
+# TODO Notify the amount of minutes instead of seconds
 send_notification(f"It took {end - start} and processed {index - 2} datasets", "Analysis finished")

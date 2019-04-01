@@ -70,6 +70,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         }
     }
 
+    // TODO: Add code to detect SVM from packages and flag to activate it
     private fun initializeClassifiers(lessThan1000instances: Boolean = false): List<Classifier> {
         val classifiers = mutableListOf<Classifier>()
         classifiers.add(RandomForest())
@@ -157,6 +158,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     private fun fixSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
         val size = confusionMatrix.size
 
+        // TODO: Add option 0, meaning no normalization
         if (strategy == "B") {
             for (i in 0 until size) {
                 confusionMatrix[i][i] += 2.0
@@ -192,7 +194,6 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         }
 
         // Default
-
         for (i in 0 until size) {
             confusionMatrix[i][i] = confusionMatrix[i][i] + 1
         }
@@ -245,6 +246,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     }
 
     override fun listOptions(): Enumeration<Option> {
+        // TODO: Fix options not appearing in the Weka UI
         val result = super.listOptions().toList().toMutableList()
         result.add(
             Option(

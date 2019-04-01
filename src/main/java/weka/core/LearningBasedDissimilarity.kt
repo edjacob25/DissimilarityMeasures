@@ -7,6 +7,7 @@ import weka.classifiers.bayes.BayesNet
 import weka.classifiers.bayes.NaiveBayes
 import weka.classifiers.functions.SimpleLogistic
 import weka.classifiers.lazy.IBk
+import weka.classifiers.lazy.KStar
 import weka.classifiers.meta.Bagging
 import weka.classifiers.trees.RandomForest
 import java.util.*
@@ -76,6 +77,8 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         classifiers.add(BayesNet())
         classifiers.add(Bagging())
         classifiers.add(SimpleLogistic())
+        // TODO: Add an option to not use KStar as is very heavy
+        classifiers.add(KStar())
         if (lessThan1000instances) {
             classifiers.add(IBk())
         }

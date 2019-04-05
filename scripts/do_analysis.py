@@ -76,6 +76,8 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     command.append("-W")
 
     num_clusters = get_number_of_clusters(filepath)
+    if verbose:
+        print(f"Number of clusters for {filepath} is {num_clusters}")
     num_procs = multiprocessing.cpu_count()
     distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} \""
     clusterer = "weka.clusterers.CategoricalKMeans -init 1 -max-candidates 100 -periodic-pruning 10000 " \
@@ -121,16 +123,21 @@ def copy_files(filepath: str, strategy: str = ""):
     return new_filepath, new_clustered_filepath
 
 
-def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None) -> str:
+def get_f_measure(filepath: str, clustered_filepath: str, exe_path: str = None, verbose: bool = False) -> str:
     command = ["MeasuresComparator.exe", "-c", clustered_filepath, "-r", filepath]
     if exe_path is not None:
         command[0] = exe_path
+    start = time.time()
     result = subprocess.run(command, stdout=subprocess.PIPE)
+    end = time.time()
     text_result = result.stdout.decode('utf-8')
+
     if result.returncode != 0:
         print(f"Could not get F-Measure\nError -> {text_result}")
         raise Exception("Could not calculate f-measure")
     else:
+        if verbose:
+            print(f"Calculating f-measure took {end - start}")
         print(f"Finished getting f-measure for {filepath}, f-measure -> {text_result}")
         return text_result
 
@@ -185,7 +192,8 @@ for item in os.listdir(root_dir):
             for strategy in ["A", "B", "C", "D", "E"]:
                 cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp, strategy=strategy)
                 new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy)
-                f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path)
+                f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path,
+                                          verbose=args.verbose)
                 ws.cell(row=index, column=column, value=float(f_measure))
                 column += 2
 

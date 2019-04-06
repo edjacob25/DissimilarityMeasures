@@ -61,7 +61,6 @@ def remove_attribute(filepath: str, attribute: str):
 # TODO: Add option to read classpath from the config file
 def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False,
                     strategy: str = "A", weight_strategy: str = "N", other_measure: str = None):
-
     clustered_file_path = filepath.replace(".arff", "_clustered.arff")
     command = ["java", "-Xmx8192m"]
     if not no_classpath:
@@ -190,8 +189,10 @@ for item in os.listdir(root_dir):
                 for weight in ["N", "K", "A"]:
                     cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp, strategy=strategy,
                                     weight_strategy=weight)
-                    new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy, weight_strategy=weight)
-                    f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path,
+                    new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy,
+                                                                      weight_strategy=weight)
+                    f_measure = get_f_measure(new_filepath, new_clustered_filepath,
+                                              exe_path=args.measure_calculator_path,
                                               verbose=args.verbose)
                     ws.cell(row=index, column=column, value=float(f_measure))
                     column += 1
@@ -209,5 +210,13 @@ for item in os.listdir(root_dir):
 
 end = time.time()
 workbook.save(filename=f"{args.directory}/Results.xlsx")
-# TODO Notify the amount of minutes instead of seconds
-send_notification(f"It took {end - start} and processed {index - 2} datasets", "Analysis finished")
+
+seconds_taken = end - start
+if seconds_taken > 3600:
+    time_str = f"{seconds_taken / 3600} hours"
+elif seconds_taken > 60:
+    time_str = f"{seconds_taken / 60} minutes"
+else:
+    time_str = f"{seconds_taken} seconds"
+
+send_notification(f"It took {time_str} and processed {index - 2} datasets", "Analysis finished")

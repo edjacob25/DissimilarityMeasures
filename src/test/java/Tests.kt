@@ -2,10 +2,11 @@ package tests
 
 import org.junit.Assert
 import weka.core.*
+import weka.core.converters.ConverterUtils
 import kotlin.test.assertEquals
 import org.junit.Test as test
 
-class TestSource() {
+class TestSource {
     @test fun basicTest() {
         assertEquals(true, true)
     }
@@ -56,15 +57,13 @@ class TestSource() {
     }
 
     @test fun LearningSimmilarityTest(){
-        val instances = createDataset()
+        val instances = loadDataset("F:\\Datasets\\CleanedDatasets2\\arrhythmia_cleaned.arff")
         val measure = LearningBasedDissimilarity()
-        measure.options = arrayOf("-S", "B", "-w", "K")
+        measure.options = arrayOf("-S", "A", "-w", "N")
         measure.instances = instances
 
         Assert.assertEquals(true, true)
     }
-
-    // TODO: Add method to read the dataset from a file to use in the tests above
 
     // This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset
     private fun createDataset(): Instances{
@@ -95,5 +94,10 @@ class TestSource() {
         instances.addAll(instancesList)
 
         return instances
+    }
+
+    private fun loadDataset(route: String): Instances{
+        val datasource = ConverterUtils.DataSource(route)
+        return datasource.dataSet
     }
 }

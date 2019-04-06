@@ -60,7 +60,7 @@ def remove_attribute(filepath: str, attribute: str):
 # TODO: Add option to run other dissimilarity measures
 # TODO: Add option to read classpath from the config file
 def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False,
-                    strategy: str = "A", weight_strategy: str = "N"):
+                    strategy: str = "A", weight_strategy: str = "N", other_measure: str = None):
 
     clustered_file_path = filepath.replace(".arff", "_clustered.arff")
     command = ["java", "-Xmx8192m"]
@@ -79,7 +79,9 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     if verbose:
         print(f"Number of clusters for {filepath} is {num_clusters}")
     num_procs = multiprocessing.cpu_count()
-    distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} -w {weight_strategy} \""
+    distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} -w {weight_strategy}\""
+    if other_measure is not None:
+        distance_function = f"\"{other_measure}\""
     clusterer = "weka.clusterers.CategoricalKMeans -init 1 -max-candidates 100 -periodic-pruning 10000 " \
         f"-min-density 2.0 -t1 -1.25 -t2 -1.0 -N {num_clusters} -A {distance_function} -I 500 " \
         f"-num-slots {math.floor(num_procs / 3)} -S 10"
@@ -113,11 +115,11 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
 def copy_files(filepath: str, strategy: str = "", weight_strategy: str = ""):
     path, file = filepath.rsplit("/", 1)
     filename = file.split(".")[0]
-    os.mkdir(f"{path}/{filename}{strategy}{weight_strategy}")
-    new_filepath = f"{path}/{filename}{strategy}{weight_strategy}/{file}"
+    os.mkdir(f"{path}/{filename}_{strategy}_{weight_strategy}")
+    new_filepath = f"{path}/{filename}_{strategy}_{weight_strategy}/{file}"
     copyfile(filepath, new_filepath)
 
-    new_clustered_filepath = f"{path}/{filename}{strategy}{weight_strategy}/{filename}.clus"
+    new_clustered_filepath = f"{path}/{filename}_{strategy}_{weight_strategy}/{filename}.clus"
     copyfile(f"{path}/{filename}_clustered.arff", new_clustered_filepath)
 
     return new_filepath, new_clustered_filepath
@@ -170,7 +172,7 @@ workbook = Workbook()
 ws = workbook.active
 
 i = 2
-for strategy in ["A", "B", "C", "D", "E"]:
+for strategy in ["A", "B", "C", "D", "E", "None"]:
     for weight in ["Normal", "Kappa", "Aug"]:
         ws.cell(column=i, row=1, value=f"Strategy {strategy} with weight {weight}")
         i += 1
@@ -184,7 +186,7 @@ for item in os.listdir(root_dir):
         try:
             column = 2
             ws.cell(row=index, column=1, value=item)
-            for strategy in ["A", "B", "C", "D", "E"]:
+            for strategy in ["A", "B", "C", "D", "E", "N"]:
                 for weight in ["N", "K", "A"]:
                     cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp, strategy=strategy,
                                     weight_strategy=weight)

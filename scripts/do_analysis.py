@@ -151,6 +151,62 @@ def send_notification(message: str, title: str):
     requests.post("https://api.pushbullet.com/v2/pushes", headers=headers, data=json.dumps(data))
 
 
+def do_analysis(directory: str, verbose: bool, cp: str = None, measure_calculator_path: str = None):
+    workbook = Workbook()
+    ws = workbook.active
+
+    i = 2
+    for strategy in ["A", "B", "C", "D", "E", "None"]:
+        for weight in ["Normal", "Kappa", "Aug"]:
+            ws.cell(column=i, row=1, value=f"Strategy {strategy} with weight {weight}")
+            i += 1
+
+    start = time.time()
+    root_dir = os.path.abspath(directory)
+    index = 2
+    for item in os.listdir(root_dir):
+        if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
+            item_fullpath = os.path.join(root_dir, item)
+            try:
+                column = 2
+                ws.cell(row=index, column=1, value=item)
+                for strategy in ["A", "B", "C", "D", "E", "N"]:
+                    for weight in ["N", "K", "A"]:
+                        cluster_dataset(item_fullpath, verbose=verbose, classpath=cp, strategy=strategy,
+                                        weight_strategy=weight)
+                        new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy,
+                                                                          weight_strategy=weight)
+                        f_measure = get_f_measure(new_filepath, new_clustered_filepath,
+                                                  exe_path=measure_calculator_path,
+                                                  verbose=verbose)
+                        ws.cell(row=index, column=column, value=float(f_measure))
+                        column += 1
+
+                index += 1
+            except KeyboardInterrupt:
+                print(f"The analysis of the file {item} was requested to be finished by using Ctrl-C")
+                continue
+            except Exception as exc:
+                print(exc)
+                print(f"Skipping file {item}")
+                continue
+            finally:
+                print("\n\n")
+
+    end = time.time()
+    workbook.save(filename=f"{directory}/Results.xlsx")
+
+    seconds_taken = end - start
+    if seconds_taken > 3600:
+        time_str = f"{seconds_taken / 3600} hours"
+    elif seconds_taken > 60:
+        time_str = f"{seconds_taken / 60} minutes"
+    else:
+        time_str = f"{seconds_taken} seconds"
+
+    send_notification(f"It took {time_str} and processed {index - 2} datasets", "Analysis finished")
+
+
 parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')
 parser.add_argument('directory', help="Directory in which the cleaned datasets are")
 parser.add_argument('-cp', help="Classpath for the weka invocation, needs to contain the weka.jar file and probably "
@@ -167,56 +223,4 @@ if not os.path.isdir(args.directory):
     print("The selected path is not a directory")
     exit(1)
 
-workbook = Workbook()
-ws = workbook.active
-
-i = 2
-for strategy in ["A", "B", "C", "D", "E", "None"]:
-    for weight in ["Normal", "Kappa", "Aug"]:
-        ws.cell(column=i, row=1, value=f"Strategy {strategy} with weight {weight}")
-        i += 1
-
-start = time.time()
-root_dir = os.path.abspath(args.directory)
-index = 2
-for item in os.listdir(root_dir):
-    if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
-        item_fullpath = os.path.join(root_dir, item)
-        try:
-            column = 2
-            ws.cell(row=index, column=1, value=item)
-            for strategy in ["A", "B", "C", "D", "E", "N"]:
-                for weight in ["N", "K", "A"]:
-                    cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp, strategy=strategy,
-                                    weight_strategy=weight)
-                    new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy,
-                                                                      weight_strategy=weight)
-                    f_measure = get_f_measure(new_filepath, new_clustered_filepath,
-                                              exe_path=args.measure_calculator_path,
-                                              verbose=args.verbose)
-                    ws.cell(row=index, column=column, value=float(f_measure))
-                    column += 1
-
-            index += 1
-        except KeyboardInterrupt:
-            print(f"The analysis of the file {item} was requested to be finished by using Ctrl-C")
-            continue
-        except Exception as exc:
-            print(exc)
-            print(f"Skipping file {item}")
-            continue
-        finally:
-            print("\n\n")
-
-end = time.time()
-workbook.save(filename=f"{args.directory}/Results.xlsx")
-
-seconds_taken = end - start
-if seconds_taken > 3600:
-    time_str = f"{seconds_taken / 3600} hours"
-elif seconds_taken > 60:
-    time_str = f"{seconds_taken / 60} minutes"
-else:
-    time_str = f"{seconds_taken} seconds"
-
-send_notification(f"It took {time_str} and processed {index - 2} datasets", "Analysis finished")
+do_analysis(args.directory, args.verbose, args.cp, args.measure_calculator_path)

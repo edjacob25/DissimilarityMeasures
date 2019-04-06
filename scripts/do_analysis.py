@@ -60,7 +60,7 @@ def remove_attribute(filepath: str, attribute: str):
 # TODO: Add option to run other dissimilarity measures
 # TODO: Add option to read classpath from the config file
 def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False,
-                    strategy: str = "A"):
+                    strategy: str = "A", weight_strategy: str = "N"):
 
     clustered_file_path = filepath.replace(".arff", "_clustered.arff")
     command = ["java", "-Xmx8192m"]
@@ -79,7 +79,7 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     if verbose:
         print(f"Number of clusters for {filepath} is {num_clusters}")
     num_procs = multiprocessing.cpu_count()
-    distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} \""
+    distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} -w {weight_strategy} \""
     clusterer = "weka.clusterers.CategoricalKMeans -init 1 -max-candidates 100 -periodic-pruning 10000 " \
         f"-min-density 2.0 -t1 -1.25 -t2 -1.0 -N {num_clusters} -A {distance_function} -I 500 " \
         f"-num-slots {math.floor(num_procs / 3)} -S 10"
@@ -102,7 +102,7 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
 
     if "Exception" not in result.stderr.decode("utf-8"):
         remove_attribute(clustered_file_path, "Class")
-        print(f"Finished clustering dataset {filepath} with strategy {strategy}")
+        print(f"Finished clustering dataset {filepath} with strategy {strategy} and weight {weight_strategy}")
     else:
         if os.path.exists(clustered_file_path):
             os.remove(clustered_file_path)
@@ -110,14 +110,14 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
                         f"following command {' '.join(result.args)}")
 
 
-def copy_files(filepath: str, strategy: str = ""):
+def copy_files(filepath: str, strategy: str = "", weight_strategy: str = ""):
     path, file = filepath.rsplit("/", 1)
     filename = file.split(".")[0]
-    os.mkdir(f"{path}/{filename}{strategy}")
-    new_filepath = f"{path}/{filename}{strategy}/{file}"
+    os.mkdir(f"{path}/{filename}{strategy}{weight_strategy}")
+    new_filepath = f"{path}/{filename}{strategy}{weight_strategy}/{file}"
     copyfile(filepath, new_filepath)
 
-    new_clustered_filepath = f"{path}/{filename}{strategy}/{filename}.clus"
+    new_clustered_filepath = f"{path}/{filename}{strategy}{weight_strategy}/{filename}.clus"
     copyfile(f"{path}/{filename}_clustered.arff", new_clustered_filepath)
 
     return new_filepath, new_clustered_filepath
@@ -168,19 +168,14 @@ if not os.path.isdir(args.directory):
 
 workbook = Workbook()
 ws = workbook.active
-ws['B1'] = "Strategy A"
-ws.merge_cells('B1:C1')
-ws['D1'] = "Strategy B"
-ws.merge_cells('D1:E1')
-ws['F1'] = "Strategy C"
-ws.merge_cells('F1:G1')
-ws['H1'] = "Strategy D"
-ws.merge_cells('H1:I1')
-ws['J1'] = "Strategy E"
-ws.merge_cells('J1:K1')
+
+i = 2
+for strategy in ["A", "B", "C", "D", "E"]:
+    for weight in ["Normal", "Kappa", "Aug"]:
+        ws.cell(column=i, row=1, value=f"Strategy {strategy} with weight {weight}")
+        i += 1
 
 start = time.time()
-
 root_dir = os.path.abspath(args.directory)
 index = 2
 for item in os.listdir(root_dir):
@@ -190,12 +185,14 @@ for item in os.listdir(root_dir):
             column = 2
             ws.cell(row=index, column=1, value=item)
             for strategy in ["A", "B", "C", "D", "E"]:
-                cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp, strategy=strategy)
-                new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy)
-                f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path,
-                                          verbose=args.verbose)
-                ws.cell(row=index, column=column, value=float(f_measure))
-                column += 2
+                for weight in ["N", "K", "A"]:
+                    cluster_dataset(item_fullpath, verbose=args.verbose, classpath=args.cp, strategy=strategy,
+                                    weight_strategy=weight)
+                    new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy, weight_strategy=weight)
+                    f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=args.measure_calculator_path,
+                                              verbose=args.verbose)
+                    ws.cell(row=index, column=column, value=float(f_measure))
+                    column += 1
 
             index += 1
         except KeyboardInterrupt:

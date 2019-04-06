@@ -157,6 +157,9 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
     private fun fixSimilarityMatrix(confusionMatrix: Array<DoubleArray>): Array<DoubleArray> {
         val size = confusionMatrix.size
+        if (strategy == "N") {
+            return confusionMatrix
+        }
 
         // TODO: Add option 0, meaning no normalization
         if (strategy == "B") {
@@ -250,7 +253,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         val result = super.listOptions().toList().toMutableList()
         result.add(
             Option(
-                "The strategy to be used. Options are A, B, C, D, E. Defaults to A",
+                "The strategy to be used. Options are A, B, C, D, E or N for none. Defaults to A",
                 "S", 1, "-S <strategy>"
             )
         )

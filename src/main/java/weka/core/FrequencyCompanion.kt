@@ -1,16 +1,14 @@
 package weka.core
 
-import weka.core.Instances
 import java.io.Serializable
 
 class FrequencyCompanion constructor(instances: Instances) : Serializable {
-    private val freqs : HashMap<String, HashMap<String, Int>> = createStats(instances)
+    private val freqs: HashMap<String, HashMap<String, Int>> = createStats(instances)
 
     private fun createStats(instances: Instances): HashMap<String, HashMap<String, Int>> {
         val map = HashMap<String, HashMap<String, Int>>()
 
-        for (attribute in instances.enumerateAttributes())
-        {
+        for (attribute in instances.enumerateAttributes()) {
             val name = attribute.name()
             val attributesCount = map.getOrDefault(name, HashMap())
             for (instance in instances) {
@@ -25,7 +23,7 @@ class FrequencyCompanion constructor(instances: Instances) : Serializable {
     }
 
     fun getFrequency(attributeName: String, value: String): Int {
-        val attribute  = freqs[attributeName]
+        val attribute = freqs[attributeName]
         return attribute?.getOrDefault(value, 0) ?: 0
     }
 }

@@ -67,7 +67,7 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
                     p2++
                 }
                 firstI > secondI -> {
-                    diff = difference(secondI,"", value2)
+                    diff = difference(secondI, "", value2)
                     p2++
                 }
                 else -> {
@@ -136,7 +136,7 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
     }
 
     override fun updateDistance(currDist: Double, diff: Double): Double {
-        val proportion = 1.0/this.m_Data.numAttributes()
+        val proportion = 1.0 / this.m_Data.numAttributes()
         val difference = proportion * diff
         return currDist + difference
     }
@@ -153,6 +153,6 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
     fun probabilityB(index: Int, value: String): Double {
         val freq = frequencies.getFrequency(m_Data.attribute(index).name(), value)
         val numberInstances = m_Data.numInstances().toDouble()
-        return (freq * (freq -1)) / (numberInstances * (numberInstances - 1))
+        return (freq * (freq - 1)) / (numberInstances * (numberInstances - 1))
     }
 }

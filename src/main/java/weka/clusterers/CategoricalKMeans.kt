@@ -1,6 +1,7 @@
 package weka.clusterers
 
-import weka.core.*
+import weka.core.Capabilities
+import weka.core.DistanceFunction
 
 class CategoricalKMeans : SimpleKMeans() {
 

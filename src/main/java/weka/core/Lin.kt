@@ -1,7 +1,6 @@
 package weka.core
 
 import weka.core.neighboursearch.PerformanceStats
-import kotlin.math.log
 
 class Lin : BaseCategoricalDistance() {
     lateinit var activeInstance1: Instance
@@ -14,7 +13,7 @@ class Lin : BaseCategoricalDistance() {
     }
 
     override fun difference(index: Int, val1: String, val2: String): Double {
-        return if (val1 == val2){
+        return if (val1 == val2) {
             -1 - (2 * Math.log(probabilityA(index, val1)))
         } else {
             -1 - (2 * Math.log(probabilityA(index, val1) + probabilityA(index, val2)))
@@ -24,14 +23,14 @@ class Lin : BaseCategoricalDistance() {
 
     override fun updateDistance(currDist: Double, diff: Double): Double {
         var result = 0.0
-        for (attribute in this.instances.enumerateAttributes()){
+        for (attribute in this.instances.enumerateAttributes()) {
             val index = attribute.index()
             val log1 = Math.log(probabilityA(index, activeInstance1.stringValue(index)))
             val log2 = Math.log(probabilityA(index, activeInstance2.stringValue(index)))
             result += log1 + log2
 
         }
-        return currDist + ((1.0/result) * diff)
+        return currDist + ((1.0 / result) * diff)
     }
 
     override fun globalInfo(): String {

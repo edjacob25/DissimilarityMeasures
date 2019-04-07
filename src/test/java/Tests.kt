@@ -3,15 +3,19 @@ package tests
 import org.junit.Assert
 import weka.core.*
 import weka.core.converters.ConverterUtils
+import weka.filters.Filter
+import weka.filters.unsupervised.attribute.AddCluster
 import kotlin.test.assertEquals
 import org.junit.Test as test
 
 class TestSource {
-    @test fun basicTest() {
+    @test
+    fun basicTest() {
         assertEquals(true, true)
     }
 
-    @test fun eskinTest() {
+    @test
+    fun eskinTest() {
         val instances = createDataset()
         val measure = Eskin()
         measure.instances = instances
@@ -25,7 +29,8 @@ class TestSource {
         assertEquals((1 - (4.0 / 6.0)) * 0.2, distance)
     }
 
-    @test fun goodallTest() {
+    @test
+    fun goodallTest() {
         val instances = createDataset()
         val measure = Goodall()
         measure.instances = instances
@@ -37,12 +42,13 @@ class TestSource {
 
         val distance = measure.distance(instance1, instance2)
 
-        val prob1 =(6.0 * (6 -1)) / (14 * (14 - 1))
-        val prob2 = (8.0 * (8 -1)) / (14 * (14 - 1))
+        val prob1 = (6.0 * (6 - 1)) / (14 * (14 - 1))
+        val prob2 = (8.0 * (8 - 1)) / (14 * (14 - 1))
         Assert.assertEquals(0.8 + ((prob1 + prob2) * 0.2), distance, 0.00001)
     }
 
-    @test fun LinTest() {
+    @test
+    fun LinTest() {
         val instances = createDataset()
         val measure = Lin()
         measure.instances = instances
@@ -56,7 +62,8 @@ class TestSource {
         Assert.assertEquals(true, true)
     }
 
-    @test fun LearningSimmilarityTest(){
+    @test
+    fun LearningSimmilarityTest() {
         val instances = loadDataset("F:\\Datasets\\CleanedDatasets2\\arrhythmia_cleaned.arff")
         val measure = LearningBasedDissimilarity()
         measure.options = arrayOf("-S", "A", "-w", "N")
@@ -66,13 +73,14 @@ class TestSource {
     }
 
     // This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset
-    private fun createDataset(): Instances{
+    private fun createDataset(): Instances {
         val attributes = arrayListOf(
             Attribute("outlook", listOf("sunny", "overcast", "rainy")),
             Attribute("temperature", listOf("hot", "mild", "cool")),
             Attribute("humidity", listOf("high", "normal")),
             Attribute("windy", listOf("TRUE", "FALSE")),
-            Attribute("play", listOf("yes", "no")))
+            Attribute("play", listOf("yes", "no"))
+        )
         val instances = Instances("weather.nominal", attributes, 14)
 
         val instancesList = arrayListOf(
@@ -89,14 +97,15 @@ class TestSource {
             DenseInstance(1.0, doubleArrayOf(0.0, 1.0, 1.0, 0.0, 0.0)),
             DenseInstance(1.0, doubleArrayOf(1.0, 1.0, 0.0, 0.0, 0.0)),
             DenseInstance(1.0, doubleArrayOf(1.0, 0.0, 1.0, 1.0, 0.0)),
-            DenseInstance(1.0, doubleArrayOf(2.0, 1.0, 0.0, 0.0, 1.0)))
+            DenseInstance(1.0, doubleArrayOf(2.0, 1.0, 0.0, 0.0, 1.0))
+        )
         instancesList.forEach { it.setDataset(instances) }
         instances.addAll(instancesList)
 
         return instances
     }
 
-    private fun loadDataset(route: String): Instances{
+    private fun loadDataset(route: String): Instances {
         val datasource = ConverterUtils.DataSource(route)
         return datasource.dataSet
     }

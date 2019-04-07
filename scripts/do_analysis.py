@@ -151,6 +151,16 @@ def send_notification(message: str, title: str):
     requests.post("https://api.pushbullet.com/v2/pushes", headers=headers, data=json.dumps(data))
 
 
+def format_seconds(seconds: float) -> str:
+    seconds = math.fabs(seconds)
+    if seconds > 3600:
+        return f"{seconds / 3600} hours"
+    elif seconds > 60:
+        return f"{seconds / 60} minutes"
+    else:
+        return f"{seconds} seconds"
+
+
 def do_analysis(directory: str, verbose: bool, cp: str = None, measure_calculator_path: str = None):
     workbook = Workbook()
     ws = workbook.active
@@ -196,14 +206,53 @@ def do_analysis(directory: str, verbose: bool, cp: str = None, measure_calculato
     end = time.time()
     workbook.save(filename=f"{directory}/Results.xlsx")
 
-    seconds_taken = end - start
-    if seconds_taken > 3600:
-        time_str = f"{seconds_taken / 3600} hours"
-    elif seconds_taken > 60:
-        time_str = f"{seconds_taken / 60} minutes"
-    else:
-        time_str = f"{seconds_taken} seconds"
+    time_str = format_seconds(end - start)
+    send_notification(f"It took {time_str} and processed {index - 2} datasets", "Analysis finished")
 
+
+def do_analysis_2(directory: str, verbose: bool, cp: str = None, measure_calculator_path: str = None):
+    workbook = Workbook()
+    ws = workbook.active
+
+    i = 2
+    for measure in ["Eskin", "Gambaryan", "Goodall", "Lin", "OccurenceFrequency", "InverseOccurenceFrequency"]:
+        ws.cell(column=i, row=1, value=f"Measure {measure}")
+        i += 1
+
+    start = time.time()
+    root_dir = os.path.abspath(directory)
+    index = 2
+    for item in os.listdir(root_dir):
+        if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
+            item_fullpath = os.path.join(root_dir, item)
+            try:
+                column = 2
+                ws.cell(row=index, column=1, value=item)
+                measures = ["weka.core.Eskin", "weka.core.Gambaryan", "weka.core.Goodall", "weka.core.Lin",
+                            "weka.core.OccurenceFrequency", "weka.core.InverseOccurenceFrequency"]
+                for measure in measures:
+                    cluster_dataset(item_fullpath, verbose=verbose, classpath=cp, other_measure=measure)
+                    new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=measure)
+                    f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=measure_calculator_path,
+                                              verbose=verbose)
+                    ws.cell(row=index, column=column, value=float(f_measure))
+                    column += 1
+
+                index += 1
+            except KeyboardInterrupt:
+                print(f"The analysis of the file {item} was requested to be finished by using Ctrl-C")
+                continue
+            except Exception as exc:
+                print(exc)
+                print(f"Skipping file {item}")
+                continue
+            finally:
+                print("\n\n")
+
+    end = time.time()
+    workbook.save(filename=f"{directory}/Results_Other.xlsx")
+
+    time_str = format_seconds(end - start)
     send_notification(f"It took {time_str} and processed {index - 2} datasets", "Analysis finished")
 
 
@@ -213,8 +262,11 @@ parser.add_argument('-cp', help="Classpath for the weka invocation, needs to con
                                 "the jar of the measure ")
 parser.add_argument("-v", "--verbose", help="Show the output of the weka commands", action='store_true')
 parser.add_argument("-f", "--measure-calc", help="Path to the f-measure calculator", dest='measure_calculator_path')
-parser.add_argument("-s", "--save", help="Path to the f-measure calculator", dest='store_true')
+parser.add_argument("--alternate-analysis", help="Does the alternate analysis with the already known simmilarity "
+                                                 "measures", action='store_true')
+parser.add_argument("-s", "--save", help="Path to the f-measure calculator", action='store_true')
 # TODO: Actually save the output of the commands
+
 
 args = parser.parse_args()
 
@@ -223,4 +275,7 @@ if not os.path.isdir(args.directory):
     print("The selected path is not a directory")
     exit(1)
 
-do_analysis(args.directory, args.verbose, args.cp, args.measure_calculator_path)
+if not args.alternate_analysis:
+    do_analysis(args.directory, args.verbose, args.cp, args.measure_calculator_path)
+else:
+    do_analysis_2(args.directory, args.verbose, args.cp, args.measure_calculator_path)

@@ -215,7 +215,8 @@ def do_analysis_2(directory: str, verbose: bool, cp: str = None, measure_calcula
     ws = workbook.active
 
     i = 2
-    for measure in ["Eskin", "Gambaryan", "Goodall", "Lin", "OccurenceFrequency", "InverseOccurenceFrequency"]:
+    for measure in ["Eskin", "Gambaryan", "Goodall", "Lin", "OccurenceFrequency", "InverseOccurenceFrequency",
+                    "Euclidian", "Manhattan"]:
         ws.cell(column=i, row=1, value=f"Measure {measure}")
         i += 1
 
@@ -229,7 +230,8 @@ def do_analysis_2(directory: str, verbose: bool, cp: str = None, measure_calcula
                 column = 2
                 ws.cell(row=index, column=1, value=item)
                 measures = ["weka.core.Eskin", "weka.core.Gambaryan", "weka.core.Goodall", "weka.core.Lin",
-                            "weka.core.OccurenceFrequency", "weka.core.InverseOccurenceFrequency"]
+                            "weka.core.OccurenceFrequency", "weka.core.InverseOccurenceFrequency",
+                            "weka.core.EuclideanDistance", "weka.core.ManhattanDistance"]
                 for measure in measures:
                     cluster_dataset(item_fullpath, verbose=verbose, classpath=cp, other_measure=measure)
                     new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=measure)

@@ -60,7 +60,7 @@ def remove_attribute(filepath: str, attribute: str):
 # TODO: Add option to run other dissimilarity measures
 # TODO: Add option to read classpath from the config file
 def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False,
-                    strategy: str = "A", weight_strategy: str = "N", other_measure: str = None):
+                    strategy: str = "A", weight_strategy: str = "N", other_measure: str = None, start_mode: str = "1"):
     clustered_file_path = filepath.replace(".arff", "_clustered.arff")
     command = ["java", "-Xmx8192m"]
     if not no_classpath:
@@ -81,7 +81,7 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} -w {weight_strategy}\""
     if other_measure is not None:
         distance_function = f"\"{other_measure}\""
-    clusterer = "weka.clusterers.CategoricalKMeans -init 1 -max-candidates 100 -periodic-pruning 10000 " \
+    clusterer = f"weka.clusterers.CategoricalKMeans -init {start_mode} -max-candidates 100 -periodic-pruning 10000 " \
         f"-min-density 2.0 -t1 -1.25 -t2 -1.0 -N {num_clusters} -A {distance_function} -I 500 " \
         f"-num-slots {math.floor(num_procs / 3)} -S 10"
     command.append(clusterer)
@@ -107,7 +107,14 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     else:
         if os.path.exists(clustered_file_path):
             os.remove(clustered_file_path)
-        raise Exception(f"There was a error running weka with the file {filepath.rsplit('/')[-1]} and the " +
+
+        if start_mode == "1":
+            print("There was an error running weka with the k-means++ mode, trying with classic mode")
+            cluster_dataset(filepath, classpath=classpath, no_classpath=no_classpath, verbose=verbose,
+                            strategy=strategy, weight_strategy=weight_strategy, other_measure=other_measure,
+                            start_mode="0")
+        else:
+            raise Exception(f"There was a error running weka with the file {filepath.rsplit('/')[-1]} and the " +
                         f"following command {' '.join(result.args)}")
 
 

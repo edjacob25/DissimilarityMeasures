@@ -1,5 +1,11 @@
 package weka.core
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import me.jacobrr.toEnumeration
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
@@ -12,11 +18,15 @@ import weka.classifiers.meta.Bagging
 import weka.classifiers.trees.RandomForest
 import java.util.*
 import kotlin.collections.HashMap
+import kotlin.system.measureTimeMillis
 
 class LearningBasedDissimilarity : BaseCategoricalDistance() {
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
-        trainClassifiers(insts)
+        val timeElapsed = measureTimeMillis {
+            trainClassifiers(insts)
+        }
+        println("Training took $timeElapsed miliseconds")
     }
 
     private lateinit var weights: HashMap<Int, Double>
@@ -24,49 +34,70 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
     protected var strategy = "A"
     protected var weightStyle = "N"
 
+    @ExperimentalCoroutinesApi
     private fun trainClassifiers(insts: Instances?) {
+
         val instances = Instances(insts)
-        println("Chosen strategy is $strategy")
-        println("Chosen weight style is $weightStyle")
+        //println("Chosen strategy is $strategy")
+        //println("Chosen weight style is $weightStyle")
         weights = HashMap()
         similarityMatrices = HashMap()
-        for (attribute in instances.enumerateAttributes()) {
-            val isLessThan1000 = instances.numInstances() < 1000
-            val classifiers = initializeClassifiers(isLessThan1000)
-
-            val stats = instances.attributeStats(attribute.index())
-
-            if (attribute.numValues() > 50 || !stats.nominalCounts.all { it > 0 }) {
-                weights[attribute.index()] = 0.0
-                println("Attribute ${attribute.name()} has a weight 0, meaning it won't be taken on account when calculating the dissimilarity")
-                continue
+        val atts = instances.enumerateAttributes().toList()
+        fun CoroutineScope.produceAttribute() = produce<Attribute> {
+            var i = 0
+            while (true) {
+                send(atts[i])
+                i++
+                if (i >= atts.size)
+                    break
             }
-            instances.setClass(attribute)
+        }
 
-            val results = mutableListOf<ClassifierResult>()
-            for (classifier in classifiers) {
-                results.add(evaluateClassifier(instances, classifier))
-            }
-            val (confusion, auc, kappa, name) = results.maxBy { it.auc }!!
-            println("The chosen classifier is $name")
-            val similarity = normalizeMatrix(confusion)
-            val fixedSimilarity = fixSimilarityMatrix(similarity)
-            val weight = decideWeight(auc, kappa)
-            weights[attribute.index()] = weight
-            val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
-            for (i in 0 until similarity.size) {
-                val attributeJMap = mutableMapOf<String, Double>()
-                print(attribute.value(i))
-                for (j in 0 until similarity.size) {
-                    attributeJMap[attribute.value(j)] = 1 - fixedSimilarity[i][j]
-                    print("|${fixedSimilarity[i][j]}|")
+        fun CoroutineScope.launchProcessor(id: Int, channel: ReceiveChannel<Attribute>) = launch {
+            for (attribute in channel) {
+                println("Coroutine $id is taking attribute ${attribute.name()}")
+                val isLessThan1000 = instances.numInstances() < 1000
+                val classifiers = initializeClassifiers(isLessThan1000)
+
+                val stats = instances.attributeStats(attribute.index())
+
+                if (attribute.numValues() > 50 || !stats.nominalCounts.all { it > 0 }) {
+                    weights[attribute.index()] = 0.0
+                    //println("Attribute ${attribute.name()} has a weight 0, meaning it won't be taken on account when calculating the dissimilarity")
+                    continue
                 }
-                print("\n")
-                attributeIMap[attribute.value(i)] = attributeJMap
-            }
-            similarityMatrices[attribute.index()] = attributeIMap
-            println("Attribute ${attribute.name()} has a weight $weight")
+                instances.setClass(attribute)
 
+                val results = mutableListOf<ClassifierResult>()
+
+                for (classifier in classifiers) {
+                    results.add(evaluateClassifier(instances, classifier))
+                }
+                val (confusion, auc, kappa, name) = results.maxBy { it.auc }!!
+                println("The chosen classifier is $name")
+                val similarity = normalizeMatrix(confusion)
+                val fixedSimilarity = fixSimilarityMatrix(similarity)
+                val weight = decideWeight(auc, kappa)
+                weights[attribute.index()] = weight
+                val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
+                for (i in 0 until similarity.size) {
+                    val attributeJMap = mutableMapOf<String, Double>()
+                    //print(attribute.value(i))
+                    for (j in 0 until similarity.size) {
+                        attributeJMap[attribute.value(j)] = 1 - fixedSimilarity[i][j]
+                        //print("|${fixedSimilarity[i][j]}|")
+                    }
+                    //print("\n")
+                    attributeIMap[attribute.value(i)] = attributeJMap
+                }
+                similarityMatrices[attribute.index()] = attributeIMap
+                //println("Attribute ${attribute.name()} has a weight $weight")
+            }
+        }
+
+        runBlocking {
+            val producer = produceAttribute()
+            repeat(5) { launchProcessor(it, producer) }
         }
     }
 

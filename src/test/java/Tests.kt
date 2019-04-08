@@ -72,6 +72,26 @@ class TestSource {
         Assert.assertEquals(true, true)
     }
 
+    fun CategoricalKMeansTest() {
+        //java -Xmx8192m  -W 'weka.clusterers.CategoricalKMeans -init 1 -max-candidates 100 -periodic-pruning 10000
+        // -min-density 2.0 -t1 -1.25 -t2 -1.0 -N 16 -A "weka.core.LearningBasedDissimilarity -R first-last -S A -w N"
+        // -I 500 -num-slots 4 -S 10 -i /mnt/f/Datasets/CleanedDatasets2/arrhythmia_cleaned.arff
+        // -o /mnt/f/Datasets/CleanedDatasets2/arrhythmia_cleaned_clustered.arff -I Last
+        val command = arrayOf(
+            "-W",
+            "weka.clusterers.CategoricalKMeans -init 0 -max-candidates 100 -periodic-pruning 10000 -min-density 2.0 " +
+                    "-t1 -1.25 -t2 -1.0 -N 16 -A \"weka.core.LearningBasedDissimilarity -R first-last\" " +
+                    "-I 500 -num-slots 4 -S 10",
+            "-i",
+            "F:\\Datasets\\CleanedDatasets2\\arrhythmia_cleaned.arff",
+            "-o",
+            "F:\\Datasets\\CleanedDatasets2\\arrhythmia_cleaned_clustered.arff",
+            "-I",
+            "Last"
+        )
+        Filter.runFilter(AddCluster(), command)
+    }
+
     // This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset
     private fun createDataset(): Instances {
         val attributes = arrayListOf(

@@ -1,11 +1,8 @@
 package weka.core
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import me.jacobrr.toEnumeration
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
@@ -17,10 +14,11 @@ import weka.classifiers.lazy.KStar
 import weka.classifiers.meta.Bagging
 import weka.classifiers.trees.RandomForest
 import java.util.*
-import kotlin.collections.HashMap
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.measureTimeMillis
 
 class LearningBasedDissimilarity : BaseCategoricalDistance() {
+    @ExperimentalCoroutinesApi
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
         val timeElapsed = measureTimeMillis {
@@ -29,7 +27,7 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         println("Training took $timeElapsed miliseconds")
     }
 
-    private lateinit var weights: HashMap<Int, Double>
+    private lateinit var weights: MutableMap<Int, Double>
     private lateinit var similarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
     protected var strategy = "A"
     protected var weightStyle = "N"
@@ -40,8 +38,8 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
         val instances = Instances(insts)
         //println("Chosen strategy is $strategy")
         //println("Chosen weight style is $weightStyle")
-        weights = HashMap()
-        similarityMatrices = HashMap()
+        weights = ConcurrentHashMap()
+        similarityMatrices = ConcurrentHashMap()
         val atts = instances.enumerateAttributes().toList()
         fun CoroutineScope.produceAttribute() = produce<Attribute> {
             var i = 0
@@ -95,10 +93,12 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             }
         }
 
-        runBlocking {
+        val jobs = GlobalScope.launch {
             val producer = produceAttribute()
             repeat(5) { launchProcessor(it, producer) }
         }
+
+        runBlocking { jobs.join() }
     }
 
     // TODO: Add code to detect SVM from packages and flag to activate it

@@ -13,13 +13,14 @@ import weka.classifiers.trees.RandomForest
 import java.util.*
 import kotlin.collections.HashMap
 
-class LearningBasedDissimilarity : BaseCategoricalDistance() {
+
+open class LearningBasedDissimilarity : BaseCategoricalDistance() {
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
         trainClassifiers(insts)
     }
 
-    private lateinit var weights: HashMap<Int, Double>
+    protected lateinit var weights: MutableMap<Int, Double>
     private lateinit var similarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
     protected var strategy = "A"
     protected var weightStyle = "N"
@@ -66,7 +67,6 @@ class LearningBasedDissimilarity : BaseCategoricalDistance() {
             }
             similarityMatrices[attribute.index()] = attributeIMap
             println("Attribute ${attribute.name()} has a weight $weight")
-
         }
     }
 

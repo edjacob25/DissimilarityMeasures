@@ -147,7 +147,9 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
 
 
     fun probabilityA(index: Int, value: String): Double {
-        return frequencies.getFrequency(m_Data.attribute(index).name(), value) / m_Data.numInstances().toDouble()
+        val freq = frequencies.getFrequency(m_Data.attribute(index).name(), value)
+        val numInstances = m_Data.numInstances().toDouble()
+        return  freq/numInstances
     }
 
     fun probabilityB(index: Int, value: String): Double {

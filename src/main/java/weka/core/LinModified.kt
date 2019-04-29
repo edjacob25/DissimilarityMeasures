@@ -15,14 +15,14 @@ open class LinModified : BaseCategoricalDistance() {
 
     override fun difference(index: Int, val1: String, val2: String): Double {
         return if (val1 == val2) {
-            learningCompanion.weights[index]!! *  (-1 - (2 * Math.log(probabilityA(index, val1))))
+            learningCompanion.weights[index]!! *  2 * Math.log(probabilityA(index, val1))
         } else {
-            learningCompanion.weights[index]!! *  (-1 - (2 * Math.log(probabilityA(index, val1) + probabilityA(index, val2))))
+            learningCompanion.weights[index]!! *  2 * Math.log(probabilityA(index, val1) + probabilityA(index, val2))
         }
     }
 
     override fun updateDistance(currDist: Double, diff: Double): Double {
-        return currDist + diff
+        return currDist - diff
     }
 
 

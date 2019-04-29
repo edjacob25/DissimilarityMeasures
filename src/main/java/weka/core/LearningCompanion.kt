@@ -117,7 +117,7 @@ class LearningCompanion(protected val strategy: String, protected val weightStyl
 
     }
 
-    private fun printConfusionMatrix(confusionMatrix: Array<DoubleArray>) {
+    private fun printMatrix(confusionMatrix: Array<DoubleArray>) {
 
         for (i in 0 until confusionMatrix.size) {
             for (j in 0 until confusionMatrix.size) {

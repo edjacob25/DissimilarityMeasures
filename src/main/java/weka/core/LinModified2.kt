@@ -1,6 +1,16 @@
 package weka.core
 
+import weka.core.neighboursearch.PerformanceStats
+
 class LinModified2 : LinModified() {
+    lateinit var activeInstance1: Instance
+    lateinit var activeInstance2: Instance
+
+    override fun distance(first: Instance?, second: Instance?, cutOffValue: Double, stats: PerformanceStats?): Double {
+        activeInstance1 = first!!
+        activeInstance2 = second!!
+        return super.distance(first, second, cutOffValue, stats)
+    }
     override fun updateDistance(currDist: Double, diff: Double): Double {
         var result = 0.0
         for (attribute in this.instances.enumerateAttributes()) {

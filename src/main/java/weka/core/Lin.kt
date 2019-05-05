@@ -14,10 +14,10 @@ class Lin : BaseCategoricalDistance() {
         }
         instancesWeigth = 1.0 / result
 
-        val distance = super.distance(first, second, cutOffValue, stats)
-        println(distance)
+        var distance = super.distance(first, second, cutOffValue, stats)
+        if(distance > 1.0)
+            distance = 1.0
         return 1.0 - distance
-
     }
 
     override fun difference(index: Int, val1: String, val2: String): Double {

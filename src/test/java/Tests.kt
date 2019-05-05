@@ -53,13 +53,51 @@ class TestSource {
         val measure = Lin()
         measure.instances = instances
 
-        val instance1 = DenseInstance(1.0, doubleArrayOf(0.0, 0.0, 0.0, 1.0, 1.0))
-        val instance2 = DenseInstance(1.0, doubleArrayOf(1.0, 1.0, 1.0, 1.0, 0.0))
-        instance1.setDataset(instances)
-        instance2.setDataset(instances)
+        for (instance in instances){
+            for (instance2 in instances){
+                val distance = measure.distance(instance, instance2)
+                val geq0 = distance >= 0
+                println("Distance between $instance and $instance2 = $distance")
+                Assert.assertTrue(geq0)
+            }
+            println("--------------")
+        }
+    }
 
-        val distance = measure.distance(instance1, instance2)
-        Assert.assertEquals(true, true)
+    @test
+    fun LinModifiedTest() {
+        val instances = createDataset()
+        val measure = LinModified()
+        measure.instances = instances
+
+        val a = mutableListOf<Double>()
+        for (instance in instances){
+            for (instance2 in instances){
+                val distance = measure.distance(instance, instance2)
+                val geq0 = distance >= 0
+                println("Distance between $instance and $instance2 = $distance")
+                a.add(distance)
+                Assert.assertTrue(geq0)
+            }
+            println("--------------")
+        }
+    }
+
+    @test
+    fun LinModified2Test() {
+        val instances = createDataset()
+        val measure = LinModified2()
+        measure.instances = instances
+
+        for (instance in instances){
+            for (instance2 in instances){
+                val distance = measure.distance(instance, instance2)
+                val geq0 = distance >= 0
+                println("Distance between $instance and $instance2 = $distance")
+                Assert.assertTrue(geq0)
+            }
+            println("--------------")
+        }
     }
 
     @test

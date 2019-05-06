@@ -77,9 +77,6 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
             }
             stats?.incrCoordCount()
             distance = updateDistance(distance, diff)
-            if (distance > cutOffValue) {
-                return java.lang.Double.POSITIVE_INFINITY
-            }
         }
 
         return distance
@@ -149,7 +146,7 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
     fun probabilityA(index: Int, value: String): Double {
         val freq = frequencies.getFrequency(m_Data.attribute(index).name(), value)
         val numInstances = m_Data.numInstances().toDouble()
-        return  freq/numInstances
+        return freq / numInstances
     }
 
     fun probabilityB(index: Int, value: String): Double {

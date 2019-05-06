@@ -14,19 +14,21 @@ class Lin : BaseCategoricalDistance() {
         }
         instancesWeigth = 1.0 / result
 
-        var distance = super.distance(first, second, cutOffValue, stats)
-        if(distance > 1.0)
-            distance = 1.0
-        return 1.0 - distance
+        val distance = super.distance(first, second, cutOffValue, stats)
+        return 1 - distance
+    }
+
+    override fun clean() {
     }
 
     override fun difference(index: Int, val1: String, val2: String): Double {
-        return if (val1 == val2) {
+        val result = if (val1 == val2) {
             val prob = probabilityA(index, val1)
             2 * Math.log(prob)
         } else {
             2 * (Math.log(probabilityA(index, val1) + probabilityA(index, val2)))
         }
+        return result
     }
 
     override fun updateDistance(currDist: Double, diff: Double): Double {

@@ -6,6 +6,16 @@ open class LinModified : BaseCategoricalDistance() {
     protected lateinit var learningCompanion: LearningCompanion
     var instancesWeigth = 0.0
 
+    override fun setInstances(insts: Instances?) {
+        super.setInstances(insts)
+        learningCompanion = LearningCompanion("N", "K")
+        learningCompanion.trainClassifiers(instances)
+
+        for (weight in learningCompanion.weights){
+            println("Attribute ${weight.key} has weight ${weight.value}")
+        }
+    }
+
     override fun distance(first: Instance?, second: Instance?, cutOffValue: Double, stats: PerformanceStats?): Double {
         // This calculates the Lin weight for each pair of instances
         var result = 0.0
@@ -21,28 +31,20 @@ open class LinModified : BaseCategoricalDistance() {
         return super.distance(first, second, cutOffValue, stats)
     }
 
-    override fun setInstances(insts: Instances?) {
-        super.setInstances(insts)
-        learningCompanion = LearningCompanion("N", "K")
-        learningCompanion.trainClassifiers(instances)
-
-        for (weight in learningCompanion.weights){
-            println("Attribute ${weight.key} has weight ${weight.value}")
-        }
-    }
-
     override fun difference(index: Int, val1: String, val2: String): Double {
-        return if (val1 == val2) {
-            val lowerLimit = 2 * Math.log(instances.size.toDouble())
-            val lin =2 * Math.log(probabilityA(index, val1))
-            val normalizedLin = (lin + lowerLimit) / lowerLimit
-            normalizedLin
+        val lowerLimit = if (val1 == val2) {
+            2 * Math.log(instances.size.toDouble())
         } else {
-            val lowerLimit = 2 * Math.log(instances.size.toDouble() / 2)
-            val lin = 2 * Math.log(probabilityA(index, val1) + probabilityA(index, val2))
-            val normalizedLin = (lin + lowerLimit) / lowerLimit
-            normalizedLin
+            2 * Math.log(instances.size.toDouble() / 2)
         }
+
+        val lin = if (val1 == val2) {
+            2 * Math.log(probabilityA(index, val1))
+        } else {
+            2 * Math.log(probabilityA(index, val1) + probabilityA(index, val2))
+        }
+        val normalizedLin = (lin + lowerLimit) / lowerLimit
+        return normalizedLin
     }
 
     override fun updateDistance(currDist: Double, diff: Double): Double {

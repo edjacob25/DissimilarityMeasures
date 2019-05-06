@@ -48,59 +48,6 @@ class TestSource {
     }
 
     @test
-    fun LinTest() {
-        val instances = createDataset()
-        val measure = Lin()
-        measure.instances = instances
-
-        for (instance in instances){
-            for (instance2 in instances){
-                val distance = measure.distance(instance, instance2)
-                val geq0 = distance >= 0
-                println("Distance between $instance and $instance2 = $distance")
-                Assert.assertTrue(geq0)
-            }
-            println("--------------")
-        }
-    }
-
-    @test
-    fun LinModifiedTest() {
-        val instances = createDataset()
-        val measure = LinModified()
-        measure.instances = instances
-
-        val a = mutableListOf<Double>()
-        for (instance in instances){
-            for (instance2 in instances){
-                val distance = measure.distance(instance, instance2)
-                val geq0 = distance >= 0
-                println("Distance between $instance and $instance2 = $distance")
-                a.add(distance)
-                Assert.assertTrue(geq0)
-            }
-            println("--------------")
-        }
-    }
-
-    @test
-    fun LinModified2Test() {
-        val instances = createDataset()
-        val measure = LinModified2()
-        measure.instances = instances
-
-        for (instance in instances){
-            for (instance2 in instances){
-                val distance = measure.distance(instance, instance2)
-                val geq0 = distance >= 0
-                println("Distance between $instance and $instance2 = $distance")
-                Assert.assertTrue(geq0)
-            }
-            println("--------------")
-        }
-    }
-
-    @test
     fun LearningSimmilarityTest() {
         val instances = loadDataset("F:\\Datasets\\CleanedDatasets2\\arrhythmia_cleaned.arff")
         val measure = LearningBasedDissimilarity()
@@ -129,42 +76,42 @@ class TestSource {
         )
         Filter.runFilter(AddCluster(), command)
     }
+}
 
-    // This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset
-    private fun createDataset(): Instances {
-        val attributes = arrayListOf(
-            Attribute("outlook", listOf("sunny", "overcast", "rainy")),
-            Attribute("temperature", listOf("hot", "mild", "cool")),
-            Attribute("humidity", listOf("high", "normal")),
-            Attribute("windy", listOf("TRUE", "FALSE")),
-            Attribute("play", listOf("yes", "no"))
-        )
-        val instances = Instances("weather.nominal", attributes, 14)
+// This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset
+fun createDataset(): Instances {
+    val attributes = arrayListOf(
+        Attribute("outlook", listOf("sunny", "overcast", "rainy")),
+        Attribute("temperature", listOf("hot", "mild", "cool")),
+        Attribute("humidity", listOf("high", "normal")),
+        Attribute("windy", listOf("TRUE", "FALSE")),
+        Attribute("play", listOf("yes", "no"))
+    )
+    val instances = Instances("weather.nominal", attributes, 14)
 
-        val instancesList = arrayListOf(
-            DenseInstance(1.0, doubleArrayOf(0.0, 0.0, 0.0, 1.0, 1.0)),
-            DenseInstance(1.0, doubleArrayOf(0.0, 0.0, 0.0, 0.0, 1.0)),
-            DenseInstance(1.0, doubleArrayOf(1.0, 0.0, 0.0, 1.0, 0.0)),
-            DenseInstance(1.0, doubleArrayOf(2.0, 1.0, 0.0, 1.0, 0.0)),
-            DenseInstance(1.0, doubleArrayOf(2.0, 2.0, 1.0, 1.0, .0)),
-            DenseInstance(1.0, doubleArrayOf(2.0, 2.0, 1.0, 0.0, 1.0)),
-            DenseInstance(1.0, doubleArrayOf(1.0, 2.0, 1.0, 0.0, 0.0)),
-            DenseInstance(1.0, doubleArrayOf(0.0, 1.0, 0.0, 1.0, 1.0)),
-            DenseInstance(1.0, doubleArrayOf(0.0, 2.0, 1.0, 1.0, 0.0)),
-            DenseInstance(1.0, doubleArrayOf(2.0, 1.0, 1.0, 1.0, 0.0)),
-            DenseInstance(1.0, doubleArrayOf(0.0, 1.0, 1.0, 0.0, 0.0)),
-            DenseInstance(1.0, doubleArrayOf(1.0, 1.0, 0.0, 0.0, 0.0)),
-            DenseInstance(1.0, doubleArrayOf(1.0, 0.0, 1.0, 1.0, 0.0)),
-            DenseInstance(1.0, doubleArrayOf(2.0, 1.0, 0.0, 0.0, 1.0))
-        )
-        instancesList.forEach { it.setDataset(instances) }
-        instances.addAll(instancesList)
+    val instancesList = arrayListOf(
+        DenseInstance(1.0, doubleArrayOf(0.0, 0.0, 0.0, 1.0, 1.0)),
+        DenseInstance(1.0, doubleArrayOf(0.0, 0.0, 0.0, 0.0, 1.0)),
+        DenseInstance(1.0, doubleArrayOf(1.0, 0.0, 0.0, 1.0, 0.0)),
+        DenseInstance(1.0, doubleArrayOf(2.0, 1.0, 0.0, 1.0, 0.0)),
+        DenseInstance(1.0, doubleArrayOf(2.0, 2.0, 1.0, 1.0, .0)),
+        DenseInstance(1.0, doubleArrayOf(2.0, 2.0, 1.0, 0.0, 1.0)),
+        DenseInstance(1.0, doubleArrayOf(1.0, 2.0, 1.0, 0.0, 0.0)),
+        DenseInstance(1.0, doubleArrayOf(0.0, 1.0, 0.0, 1.0, 1.0)),
+        DenseInstance(1.0, doubleArrayOf(0.0, 2.0, 1.0, 1.0, 0.0)),
+        DenseInstance(1.0, doubleArrayOf(2.0, 1.0, 1.0, 1.0, 0.0)),
+        DenseInstance(1.0, doubleArrayOf(0.0, 1.0, 1.0, 0.0, 0.0)),
+        DenseInstance(1.0, doubleArrayOf(1.0, 1.0, 0.0, 0.0, 0.0)),
+        DenseInstance(1.0, doubleArrayOf(1.0, 0.0, 1.0, 1.0, 0.0)),
+        DenseInstance(1.0, doubleArrayOf(2.0, 1.0, 0.0, 0.0, 1.0))
+    )
+    instancesList.forEach { it.setDataset(instances) }
+    instances.addAll(instancesList)
 
-        return instances
-    }
+    return instances
+}
 
-    private fun loadDataset(route: String): Instances {
-        val datasource = ConverterUtils.DataSource(route)
-        return datasource.dataSet
-    }
+private fun loadDataset(route: String): Instances {
+    val datasource = ConverterUtils.DataSource(route)
+    return datasource.dataSet
 }

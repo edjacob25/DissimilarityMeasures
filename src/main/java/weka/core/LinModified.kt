@@ -33,9 +33,9 @@ open class LinModified : BaseCategoricalDistance() {
 
     override fun difference(index: Int, val1: String, val2: String): Double {
         val lowerLimit = if (val1 == val2) {
-            2 * Math.log(instances.size.toDouble())
+            2 * Math.log(frequencies.originalNumOfInstances.toDouble())
         } else {
-            2 * Math.log(instances.size.toDouble() / 2)
+            2 * Math.log(frequencies.originalNumOfInstances.toDouble() / 2)
         }
 
         val lin = if (val1 == val2) {

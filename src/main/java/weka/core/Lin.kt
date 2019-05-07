@@ -18,9 +18,6 @@ class Lin : BaseCategoricalDistance() {
         return 1 - distance
     }
 
-    override fun clean() {
-    }
-
     override fun difference(index: Int, val1: String, val2: String): Double {
         val result = if (val1 == val2) {
             val prob = probabilityA(index, val1)

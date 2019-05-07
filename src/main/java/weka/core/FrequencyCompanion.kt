@@ -5,9 +5,11 @@ import java.io.Serializable
 class FrequencyCompanion constructor(instances: Instances) : Serializable {
     private val freqs: HashMap<String, HashMap<String, Int>> = createStats(instances)
 
+    var originalNumOfInstances = 0
+
     private fun createStats(instances: Instances): HashMap<String, HashMap<String, Int>> {
         val map = HashMap<String, HashMap<String, Int>>()
-
+        originalNumOfInstances = instances.numInstances()
         for (attribute in instances.enumerateAttributes()) {
             val name = attribute.name()
             val attributesCount = map.getOrDefault(name, HashMap())

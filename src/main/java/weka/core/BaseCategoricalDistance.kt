@@ -145,13 +145,13 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
 
     fun probabilityA(index: Int, value: String): Double {
         val freq = frequencies.getFrequency(m_Data.attribute(index).name(), value)
-        val numInstances = m_Data.numInstances().toDouble()
+        val numInstances = frequencies.originalNumOfInstances.toDouble()
         return freq / numInstances
     }
 
     fun probabilityB(index: Int, value: String): Double {
         val freq = frequencies.getFrequency(m_Data.attribute(index).name(), value)
-        val numberInstances = m_Data.numInstances().toDouble()
+        val numberInstances = frequencies.originalNumOfInstances.toDouble()
         return (freq * (freq - 1)) / (numberInstances * (numberInstances - 1))
     }
 }

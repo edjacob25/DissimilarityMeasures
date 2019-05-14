@@ -1,5 +1,6 @@
 package weka.core
 
+import me.jacobrr.LearningCompanion
 import weka.core.neighboursearch.PerformanceStats
 
 open class LinModified_KappaMax : BaseCategoricalDistance() {

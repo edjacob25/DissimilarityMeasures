@@ -1,5 +1,6 @@
 package weka.core
 
+import me.jacobrr.LearningCompanion
 import me.jacobrr.toEnumeration
 import java.util.*
 

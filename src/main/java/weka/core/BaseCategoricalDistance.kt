@@ -1,5 +1,6 @@
 package weka.core
 
+import me.jacobrr.FrequencyCompanion
 import weka.core.neighboursearch.PerformanceStats
 
 abstract class BaseCategoricalDistance : NormalizableDistance {

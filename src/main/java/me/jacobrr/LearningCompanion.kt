@@ -1,4 +1,4 @@
-package weka.core
+package me.jacobrr
 
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
@@ -9,6 +9,7 @@ import weka.classifiers.lazy.IBk
 import weka.classifiers.lazy.KStar
 import weka.classifiers.meta.Bagging
 import weka.classifiers.trees.RandomForest
+import weka.core.Instances
 import java.util.*
 import kotlin.collections.HashMap
 

@@ -1,5 +1,6 @@
-package weka.core
+package me.jacobrr
 
+import weka.core.Instances
 import java.io.Serializable
 
 class FrequencyCompanion constructor(instances: Instances) : Serializable {

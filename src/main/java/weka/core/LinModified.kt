@@ -1,6 +1,6 @@
 package weka.core
 
-import weka.core.neighboursearch.PerformanceStats
+import me.jacobrr.LearningCompanion
 
 open class LinModified : BaseCategoricalDistance() {
     protected lateinit var learningCompanion: LearningCompanion

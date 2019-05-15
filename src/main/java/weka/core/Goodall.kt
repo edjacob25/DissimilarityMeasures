@@ -1,6 +1,6 @@
 package weka.core
 
-class Goodall : BaseCategoricalDistance() {
+open class Goodall : BaseCategoricalDistance() {
     override fun difference(index: Int, val1: String, val2: String): Double {
         return if (val1 != val2) {
             1.0

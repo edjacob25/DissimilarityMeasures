@@ -1,14 +1,50 @@
 import argparse
 import configparser
 import json
-import math
 import multiprocessing
 import os
-import requests
 import subprocess
 import time
-from openpyxl import Workbook
+from datetime import datetime
 from shutil import copyfile
+
+import math
+import requests
+from openpyxl import Workbook
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey, Boolean
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, sessionmaker
+
+Base = declarative_base()
+
+
+class Experiment(Base):
+    __tablename__ = 'experiment'
+
+    id = Column(Integer, primary_key=True)
+    method = Column(String)
+    f_score = Column(Float)
+    command_sent = Column(String)
+    time_taken = Column(Float)
+    k_means_plusplus = Column(Boolean)
+    file_name = Column(String)
+    comments = Column(String)
+    number_of_clusters = Column(Integer)
+    start_time = Column(DateTime)
+
+    set_id = Column(Integer, ForeignKey('experiment_set.id'))
+    set = relationship("ExperimentSet", back_populates="experiments")
+
+
+class ExperimentSet(Base):
+    __tablename__ = 'experiment_set'
+
+    id = Column(Integer, primary_key=True)
+    time = Column(DateTime)
+    time_taken = Column(Float)
+    number_of_datasets = Column(Integer)
+    base_directory = Column(String)
+    experiments = relationship("Experiment", order_by=Experiment.id, back_populates="set")
 
 
 def get_number_of_clusters(filepath: str):
@@ -60,7 +96,8 @@ def remove_attribute(filepath: str, attribute: str):
 # TODO: Add option to run other dissimilarity measures
 # TODO: Add option to read classpath from the config file
 def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = False, verbose: bool = False,
-                    strategy: str = "A", weight_strategy: str = "N", other_measure: str = None, start_mode: str = "1"):
+                    strategy: str = "A", weight_strategy: str = "N", other_measure: str = None, start_mode: str = "1") \
+        -> Experiment:
     clustered_file_path = filepath.replace(".arff", "_clustered.arff")
     command = ["java", "-Xmx8192m"]
     if not no_classpath:
@@ -92,6 +129,7 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     command.append("-I")
     command.append("Last")
 
+    start_dt = datetime.now()
     start = time.time()
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     end = time.time()
@@ -110,12 +148,23 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
 
         if start_mode == "1":
             print("There was an error running weka with the k-means++ mode, trying with classic mode")
-            cluster_dataset(filepath, classpath=classpath, no_classpath=no_classpath, verbose=verbose,
-                            strategy=strategy, weight_strategy=weight_strategy, other_measure=other_measure,
-                            start_mode="0")
+            return cluster_dataset(filepath, classpath=classpath, no_classpath=no_classpath, verbose=verbose,
+                                   strategy=strategy, weight_strategy=weight_strategy, other_measure=other_measure,
+                                   start_mode="0")
         else:
             raise Exception(f"There was a error running weka with the file {filepath.rsplit('/')[-1]} and the " +
-                        f"following command {' '.join(result.args)}")
+                            f"following command {' '.join(result.args)}")
+
+    if start_mode == "1":
+        return Experiment(method=distance_function.replace("\"", ""), command_sent=" ".join(command),
+                          time_taken=end - start,
+                          k_means_plusplus=True, file_name=filepath, number_of_clusters=num_clusters,
+                          start_time=start_dt, comments="")
+    else:
+        return Experiment(method=distance_function.replace("\"", ""), command_sent=" ".join(command),
+                          time_taken=end - start,
+                          k_means_plusplus=False, file_name=filepath, number_of_clusters=num_clusters,
+                          start_time=start_dt, comments="")
 
 
 def copy_files(filepath: str, strategy: str = "", weight_strategy: str = ""):
@@ -168,91 +217,57 @@ def format_seconds(seconds: float) -> str:
         return f"{seconds} seconds"
 
 
-def do_analysis(directory: str, verbose: bool, cp: str = None, measure_calculator_path: str = None):
-    workbook = Workbook()
-    ws = workbook.active
+def do_analysis(directory: str, verbose: bool, cp: str = None, measure_calculator_path: str = None,
+                alternate: bool = False):
+    if alternate:
+        measures = ["weka.core.Eskin", "weka.core.Gambaryan", "weka.core.Goodall", "weka.core.Lin",
+                    "weka.core.OccurenceFrequency", "weka.core.InverseOccurenceFrequency",
+                    "weka.core.EuclideanDistance", "weka.core.ManhattanDistance", "weka.core.LinModified",
+                    "weka.core.LinModified2", "weka.core.LinModified_Kappa", "weka.core.LinModified_MinusKappa",
+                    "weka.core.LinModified_KappaMax"]
+        measures = list(zip(measures, [None for _ in range(len(measures))]))
+    else:
+        strategies = ["A", "B", "C", "D", "E", "N"]
+        weights = ["N", "K", "A"]
+        measures = list(zip(strategies, weights))
 
-    i = 2
-    for strategy in ["A", "B", "C", "D", "E", "None"]:
-        for weight in ["Normal", "Kappa", "Aug"]:
-            ws.cell(column=i, row=1, value=f"Strategy {strategy} with weight {weight}")
-            i += 1
+    engine = create_engine('sqlite:///results.db')
+    Base.metadata.create_all(engine)
+    session_class = sessionmaker(bind=engine)
+    session = session_class()
+    exp_set = ExperimentSet(time=datetime.now(), base_directory=directory)
+    session.add(exp_set)
+    session.commit()
 
     start = time.time()
     root_dir = os.path.abspath(directory)
-    index = 2
+    i = 0
     for item in os.listdir(root_dir):
         if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
             item_fullpath = os.path.join(root_dir, item)
             try:
-                column = 2
-                ws.cell(row=index, column=1, value=item)
-                for strategy in ["A", "B", "C", "D", "E", "N"]:
-                    for weight in ["N", "K", "A"]:
-                        cluster_dataset(item_fullpath, verbose=verbose, classpath=cp, strategy=strategy,
-                                        weight_strategy=weight)
-                        new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy,
-                                                                          weight_strategy=weight)
-                        f_measure = get_f_measure(new_filepath, new_clustered_filepath,
-                                                  exe_path=measure_calculator_path,
-                                                  verbose=verbose)
-                        ws.cell(row=index, column=column, value=float(f_measure))
-                        column += 1
-
-                index += 1
-            except KeyboardInterrupt:
-                print(f"The analysis of the file {item} was requested to be finished by using Ctrl-C")
-                continue
-            except Exception as exc:
-                print(exc)
-                print(f"Skipping file {item}")
-                continue
-            finally:
-                print("\n\n")
-
-    end = time.time()
-    workbook.save(filename=f"{directory}/Results.xlsx")
-
-    time_str = format_seconds(end - start)
-    send_notification(f"It took {time_str} and processed {index - 2} datasets", "Analysis finished")
-
-
-def do_analysis_2(directory: str, verbose: bool, cp: str = None, measure_calculator_path: str = None):
-    workbook = Workbook()
-    ws = workbook.active
-
-    i = 2
-    for measure in ["Eskin", "Gambaryan", "Goodall", "Lin", "OccurenceFrequency", "InverseOccurenceFrequency",
-                    "Euclidian", "Manhattan", "LinModified", "LinModified2"]:
-        ws.cell(column=i, row=1, value=f"Measure {measure}")
-        i += 1
-
-    start = time.time()
-    root_dir = os.path.abspath(directory)
-    index = 2
-    for item in os.listdir(root_dir):
-        if item.rsplit('.', 1)[-1] == "arff" and "clustered" not in item:
-            item_fullpath = os.path.join(root_dir, item)
-            try:
-                column = 2
-                ws.cell(row=index, column=1, value=item)
-                measures = ["weka.core.Eskin", "weka.core.Gambaryan", "weka.core.Goodall", "weka.core.Lin",
-                            "weka.core.OccurenceFrequency", "weka.core.InverseOccurenceFrequency",
-                            "weka.core.EuclideanDistance", "weka.core.ManhattanDistance", "weka.core.LinModified",
-                            "weka.core.LinModified2"]
-                for measure in measures:
-                    cluster_dataset(item_fullpath, verbose=verbose, classpath=cp, other_measure=measure)
-                    new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=measure)
-                    f_measure = get_f_measure(new_filepath, new_clustered_filepath, exe_path=measure_calculator_path,
+                for strategy, weight in measures:
+                    if weight is None:
+                        exp = cluster_dataset(item_fullpath, verbose=verbose, classpath=cp, other_measure=strategy)
+                    else:
+                        exp = cluster_dataset(item_fullpath, verbose=verbose, classpath=cp, strategy=strategy,
+                                              weight_strategy=weight)
+                    new_filepath, new_clustered_filepath = copy_files(item_fullpath, strategy=strategy,
+                                                                      weight_strategy=weight)
+                    f_measure = get_f_measure(new_filepath, new_clustered_filepath,
+                                              exe_path=measure_calculator_path,
                                               verbose=verbose)
-                    ws.cell(row=index, column=column, value=float(f_measure))
-                    column += 1
+                    exp.f_score = f_measure
+                    exp_set.experiments.append(exp)
 
-                index += 1
+                session.commit()
+                i += 1
             except KeyboardInterrupt:
+                session.rollback()
                 print(f"The analysis of the file {item} was requested to be finished by using Ctrl-C")
                 continue
             except Exception as exc:
+                session.rollback()
                 print(exc)
                 print(f"Skipping file {item}")
                 continue
@@ -260,10 +275,57 @@ def do_analysis_2(directory: str, verbose: bool, cp: str = None, measure_calcula
                 print("\n\n")
 
     end = time.time()
-    workbook.save(filename=f"{directory}/Results_Other.xlsx")
+
+    exp_set.time_taken = end - start
+    exp_set.number_of_datasets = i
+    session.commit()
+    create_report(exp_set.id, base_path=root_dir)
 
     time_str = format_seconds(end - start)
-    send_notification(f"It took {time_str} and processed {index - 2} datasets", "Analysis finished")
+    send_notification(f"It took {time_str} and processed {i} datasets", "Analysis finished")
+
+
+def create_report(experiment_set: int, base_path: str = ""):
+    wb = Workbook()
+    ws = wb.active
+    engine = create_engine('sqlite:///results.db')
+    session_class = sessionmaker(bind=engine)
+    session = session_class()
+    headers = []
+    row = 1
+    last = ""
+    column = 2
+    for experiment in session.query(Experiment).filter_by(set_id=experiment_set).order_by(Experiment.file_name):
+        if last != experiment.file_name:
+            column = 2
+            row += 1
+            last = experiment.file_name
+            ws.cell(row=row, column=1, value=experiment.file_name.rsplit('/')[-1])
+        if experiment.method not in headers:
+            headers.append(experiment.method)
+        ws.cell(row=row, column=column, value=experiment.f_score)
+        column += 1
+
+    for i, header in enumerate(headers):
+        ws.cell(row=1, column=i + 2, value=header)
+        ws.cell(row=1, column=i + column + 2, value=header)
+
+    for i in range(2, row + 1):
+        base = ord('A') + column - 2
+        for j in range(column - 2):
+            item = ord('B') + j
+            ws.cell(row=i, column=j + column + 2, value=f"=RANK({chr(item)}{i},B{i}:{chr(base)}{i})")
+
+    start = chr(ord('B') + column)
+    end = chr(ord('B') + column + column - 3)
+    for i in range(column - 2):
+        item = chr(ord('B') + i + column)
+        ws.cell(row=row + 3, column=i + column + 2, value=f"=AVERAGE({item}2:{item}{row + 1})")
+        ws.cell(row=row + 4, column=i + column + 2, value=f"=RANK({item}{row + 3},{start}{row + 3}:{end}{row + 3})")
+
+    save_path = os.path.join(base_path, "results.xlsx")
+    print(f"Saving to {save_path}")
+    wb.save(save_path)
 
 
 parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')
@@ -285,7 +347,4 @@ if not os.path.isdir(args.directory):
     print("The selected path is not a directory")
     exit(1)
 
-if not args.alternate_analysis:
-    do_analysis(args.directory, args.verbose, args.cp, args.measure_calculator_path)
-else:
-    do_analysis_2(args.directory, args.verbose, args.cp, args.measure_calculator_path)
+do_analysis(args.directory, args.verbose, args.cp, args.measure_calculator_path, args.alternate_analysis)

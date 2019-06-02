@@ -45,7 +45,7 @@ open class LinModified_Kappa : BaseCategoricalDistance() {
             2 * Math.log(probabilityA(index, val1) + probabilityA(index, val2))
         }
         val kappa = learningCompanion.weights[index]!!
-        val normalizedLin = kappa * lin
+        val normalizedLin = (1 - kappa) * lin
         return normalizedLin
     }
 

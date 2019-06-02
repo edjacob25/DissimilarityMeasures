@@ -17,7 +17,7 @@ class GambaryanModified: Gambaryan() {
         if (kappa < 0.5) {
             return 1.0
         }
-        val normalized = kappa * baseDifference
+        val normalized = (1 - kappa) * baseDifference
         return normalized
     }
 }

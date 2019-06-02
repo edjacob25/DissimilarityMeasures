@@ -11,6 +11,7 @@ from shutil import copyfile
 import math
 import requests
 from openpyxl import Workbook
+import git
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
@@ -44,6 +45,7 @@ class ExperimentSet(Base):
     time_taken = Column(Float)
     number_of_datasets = Column(Integer)
     base_directory = Column(String)
+    commit = Column(String)
     experiments = relationship("Experiment", order_by=Experiment.id, back_populates="set")
 
 
@@ -235,7 +237,8 @@ def do_analysis(directory: str, verbose: bool, cp: str = None, measure_calculato
     Base.metadata.create_all(engine)
     session_class = sessionmaker(bind=engine)
     session = session_class()
-    exp_set = ExperimentSet(time=datetime.now(), base_directory=directory)
+    repo = git.Repo(search_parent_directories=True)
+    exp_set = ExperimentSet(time=datetime.now(), base_directory=directory, commit=repo.head.object.hexsha)
     session.add(exp_set)
     session.commit()
 

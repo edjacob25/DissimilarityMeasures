@@ -48,7 +48,7 @@ open class LinModified_KappaMax : BaseCategoricalDistance() {
         if (kappa < 0.5) {
             return lowerLimit
         }
-        val normalizedLin = (1 - kappa) * lin
+        val normalizedLin = kappa * lin
         return normalizedLin
     }
 

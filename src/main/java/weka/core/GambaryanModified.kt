@@ -14,9 +14,6 @@ class GambaryanModified: Gambaryan() {
     override fun difference(index: Int, val1: String, val2: String): Double {
         val baseDifference = super.difference(index, val1, val2)
         val kappa = learningCompanion.weights[index]!!
-        if (kappa < 0.5) {
-            return 1.0
-        }
         val normalized = (1 - kappa) * baseDifference
         return normalized
     }

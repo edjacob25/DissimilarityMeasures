@@ -19,6 +19,8 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
     override fun difference(index: Int, val1: String, val2: String): Double {
         if (learningCompanion.weights[index] == 0.0)
             return 0.0
+        if (learningCompanion.weights[index]!! < 0.5)
+            return 1.0
         return learningCompanion.weights[index]!! * learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
     }
 

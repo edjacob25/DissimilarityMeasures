@@ -70,5 +70,4 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
     }
 
 
-
 }

@@ -2,7 +2,7 @@ package weka.core
 
 import me.jacobrr.LearningCompanion
 
-class GambaryanModified: Gambaryan() {
+class GambaryanModified : Gambaryan() {
     protected lateinit var learningCompanion: LearningCompanion
 
     override fun setInstances(insts: Instances?) {

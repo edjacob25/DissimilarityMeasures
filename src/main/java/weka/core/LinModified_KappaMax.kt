@@ -12,7 +12,7 @@ open class LinModified_KappaMax : BaseCategoricalDistance() {
         learningCompanion = LearningCompanion("N", "K")
         learningCompanion.trainClassifiers(instances)
 
-        for (weight in learningCompanion.weights){
+        for (weight in learningCompanion.weights) {
             println("Attribute ${weight.key} has weight ${weight.value}")
         }
     }
@@ -34,9 +34,9 @@ open class LinModified_KappaMax : BaseCategoricalDistance() {
 
     override fun difference(index: Int, val1: String, val2: String): Double {
         val lowerLimit = if (val1 == val2) {
-            - 2 * Math.log(instances.size.toDouble())
+            -2 * Math.log(instances.size.toDouble())
         } else {
-            - 2 * Math.log(instances.size.toDouble() / 2)
+            -2 * Math.log(instances.size.toDouble() / 2)
         }
 
         val lin = if (val1 == val2) {

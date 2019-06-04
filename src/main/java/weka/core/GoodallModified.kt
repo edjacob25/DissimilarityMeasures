@@ -2,7 +2,7 @@ package weka.core
 
 import me.jacobrr.LearningCompanion
 
-class GoodallModified  : Goodall() {
+class GoodallModified : Goodall() {
     protected lateinit var learningCompanion: LearningCompanion
 
     override fun setInstances(insts: Instances?) {

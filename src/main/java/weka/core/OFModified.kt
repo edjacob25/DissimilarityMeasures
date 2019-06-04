@@ -2,7 +2,7 @@ package weka.core
 
 import me.jacobrr.LearningCompanion
 
-class OFModified: OccurenceFrequency() {
+class OFModified : OccurenceFrequency() {
     protected lateinit var learningCompanion: LearningCompanion
 
     override fun setInstances(insts: Instances?) {

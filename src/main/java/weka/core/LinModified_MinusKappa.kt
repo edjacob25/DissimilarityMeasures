@@ -12,7 +12,7 @@ open class LinModified_MinusKappa : BaseCategoricalDistance() {
         learningCompanion = LearningCompanion("N", "K")
         learningCompanion.trainClassifiers(instances)
 
-        for (weight in learningCompanion.weights){
+        for (weight in learningCompanion.weights) {
             println("Attribute ${weight.key} has weight ${weight.value}")
         }
     }

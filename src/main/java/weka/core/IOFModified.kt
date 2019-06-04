@@ -2,7 +2,7 @@ package weka.core
 
 import me.jacobrr.LearningCompanion
 
-class IOFModified: InverseOccurenceFrequency() {
+class IOFModified : InverseOccurenceFrequency() {
     protected lateinit var learningCompanion: LearningCompanion
 
     override fun setInstances(insts: Instances?) {

@@ -317,14 +317,14 @@ def create_report(experiment_set: int, base_path: str = ""):
         base = ord('A') + column - 2
         for j in range(column - 2):
             item = ord('B') + j
-            ws.cell(row=i, column=j + column + 2, value=f"=RANK({chr(item)}{i},B{i}:{chr(base)}{i})")
+            ws.cell(row=i, column=j + column + 2, value=f"=RANK.AVG({chr(item)}{i},$B{i}:${chr(base)}{i})")
 
     start = chr(ord('B') + column)
     end = chr(ord('B') + column + column - 3)
     for i in range(column - 2):
         item = chr(ord('B') + i + column)
         ws.cell(row=row + 3, column=i + column + 2, value=f"=AVERAGE({item}2:{item}{row + 1})")
-        ws.cell(row=row + 4, column=i + column + 2, value=f"=RANK({item}{row + 3},{start}{row + 3}:{end}{row + 3})")
+        ws.cell(row=row + 4, column=i + column + 2, value=f"=RANK({item}{row + 3},${start}{row + 3}:${end}{row + 3},1)")
 
     save_path = os.path.join(base_path, "results.xlsx")
     print(f"Saving to {save_path}")

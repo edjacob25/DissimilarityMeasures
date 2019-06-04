@@ -6,6 +6,7 @@ import os
 import subprocess
 import time
 from datetime import datetime
+from itertools import product
 from shutil import copyfile
 
 import math
@@ -30,8 +31,9 @@ class Experiment(Base):
     k_means_plusplus = Column(Boolean)
     file_name = Column(String)
     comments = Column(String)
-    number_of_clusters = Column(Integer)
+    number_of_classes = Column(Integer)
     start_time = Column(DateTime)
+    number_of_clusters = Column(Integer)
 
     set_id = Column(Integer, ForeignKey('experiment_set.id'))
     set = relationship("ExperimentSet", back_populates="experiments")
@@ -113,15 +115,15 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     command.append("weka.filters.unsupervised.attribute.AddCluster")
     command.append("-W")
 
-    num_clusters = get_number_of_clusters(filepath)
+    num_classes = get_number_of_clusters(filepath)
     if verbose:
-        print(f"Number of clusters for {filepath} is {num_clusters}")
+        print(f"Number of clusters for {filepath} is {num_classes}")
     num_procs = multiprocessing.cpu_count()
     distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} -w {weight_strategy}\""
     if other_measure is not None:
         distance_function = f"\"{other_measure}\""
     clusterer = f"weka.clusterers.CategoricalKMeans -init {start_mode} -max-candidates 100 -periodic-pruning 10000 " \
-        f"-min-density 2.0 -t1 -1.25 -t2 -1.0 -N {num_clusters} -A {distance_function} -I 500 " \
+        f"-min-density 2.0 -t1 -1.25 -t2 -1.0 -N {num_classes} -A {distance_function} -I 500 " \
         f"-num-slots {math.floor(num_procs / 3)} -S 10"
     command.append(clusterer)
     command.append("-i")
@@ -143,6 +145,7 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
 
     if "Exception" not in result.stderr.decode("utf-8"):
         remove_attribute(clustered_file_path, "Class")
+        number_of_clusters = get_number_of_clusters(clustered_file_path)
         print(f"Finished clustering dataset {filepath} with strategy {strategy} and weight {weight_strategy}")
     else:
         if os.path.exists(clustered_file_path):
@@ -159,13 +162,13 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
 
     if start_mode == "1":
         return Experiment(method=distance_function.replace("\"", ""), command_sent=" ".join(command),
-                          time_taken=end - start,
-                          k_means_plusplus=True, file_name=filepath, number_of_clusters=num_clusters,
+                          time_taken=end - start, k_means_plusplus=True, file_name=filepath,
+                          number_of_classes=num_classes, number_of_clusters=number_of_clusters,
                           start_time=start_dt, comments="")
     else:
         return Experiment(method=distance_function.replace("\"", ""), command_sent=" ".join(command),
-                          time_taken=end - start,
-                          k_means_plusplus=False, file_name=filepath, number_of_clusters=num_clusters,
+                          time_taken=end - start, k_means_plusplus=False, file_name=filepath,
+                          number_of_classes=num_classes, number_of_clusters=number_of_clusters,
                           start_time=start_dt, comments="")
 
 
@@ -231,7 +234,7 @@ def do_analysis(directory: str, verbose: bool, cp: str = None, measure_calculato
     else:
         strategies = ["A", "B", "C", "D", "E", "N"]
         weights = ["N", "K", "A"]
-        measures = list(zip(strategies, weights))
+        measures = list(product(strategies, weights))
 
     engine = create_engine('sqlite:///results.db')
     Base.metadata.create_all(engine)

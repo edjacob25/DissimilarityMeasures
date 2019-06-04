@@ -15,7 +15,7 @@ class OFModified : OccurenceFrequency() {
         val baseDifference = super.difference(index, val1, val2)
         val kappa = learningCompanion.weights[index]!!
         if (kappa < 0.5) {
-            return 1.0
+            return baseDifference
         }
         val normalized = (1 - kappa) * baseDifference
         return normalized

@@ -334,23 +334,27 @@ def create_report(experiment_set: int, base_path: str = ""):
     wb.save(save_path)
 
 
-parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')
-parser.add_argument('directory', help="Directory in which the cleaned datasets are")
-parser.add_argument('-cp', help="Classpath for the weka invocation, needs to contain the weka.jar file and probably "
-                                "the jar of the measure ")
-parser.add_argument("-v", "--verbose", help="Show the output of the weka commands", action='store_true')
-parser.add_argument("-f", "--measure-calc", help="Path to the f-measure calculator", dest='measure_calculator_path')
-parser.add_argument("--alternate-analysis", help="Does the alternate analysis with the already known simmilarity "
-                                                 "measures", action='store_true')
-parser.add_argument("-s", "--save", help="Path to the f-measure calculator", action='store_true')
-# TODO: Actually save the output of the commands
+def main():
+    parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')
+    parser.add_argument('directory', help="Directory in which the cleaned datasets are")
+    parser.add_argument('-cp', help="Classpath for the weka invocation, needs to contain the weka.jar file and probably"
+                                    " the jar of the measure ")
+    parser.add_argument("-v", "--verbose", help="Show the output of the weka commands", action='store_true')
+    parser.add_argument("-f", "--measure-calc", help="Path to the f-measure calculator", dest='measure_calculator_path')
+    parser.add_argument("--alternate-analysis", help="Does the alternate analysis with the already known simmilarity "
+                                                     "measures", action='store_true')
+    parser.add_argument("-s", "--save", help="Path to the f-measure calculator", action='store_true')
+    # TODO: Actually save the output of the commands
+
+    args = parser.parse_args()
+
+    # TODO: Read a single file
+    if not os.path.isdir(args.directory):
+        print("The selected path is not a directory")
+        exit(1)
+
+    do_analysis(args.directory, args.verbose, args.cp, args.measure_calculator_path, args.alternate_analysis)
 
 
-args = parser.parse_args()
-
-# TODO: Read a single file
-if not os.path.isdir(args.directory):
-    print("The selected path is not a directory")
-    exit(1)
-
-do_analysis(args.directory, args.verbose, args.cp, args.measure_calculator_path, args.alternate_analysis)
+if __name__ == "__main__":
+    main()

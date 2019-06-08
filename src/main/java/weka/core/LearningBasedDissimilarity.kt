@@ -9,10 +9,11 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
     protected lateinit var learningCompanion: LearningCompanion
     protected var strategy = "A"
     protected var weightStyle = "N"
+    protected var symmetric = false
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
-        learningCompanion = LearningCompanion(strategy, weightStyle)
+        learningCompanion = LearningCompanion(strategy, weightStyle, symmetric)
         learningCompanion.trainClassifiers(instances)
     }
 
@@ -47,6 +48,12 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
                         "uniform weight. Defaults to N", "w", 1, "-w <weight>"
             )
         )
+
+        result.add(
+            Option(
+                "Whether to make the similarity matrix symmetric", "s", 0, "-s"
+            )
+        )
         return result.toEnumeration()
     }
 
@@ -60,6 +67,9 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         if (weight.isNotEmpty()) {
             weightStyle = weight
         }
+
+        val symmetricFlag = Utils.getFlag('s', options)
+        symmetric = symmetricFlag
     }
 
     override fun getOptions(): Array<String> {

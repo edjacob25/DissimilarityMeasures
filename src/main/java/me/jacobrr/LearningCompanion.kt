@@ -13,7 +13,8 @@ import weka.core.Instances
 import java.util.*
 import kotlin.collections.HashMap
 
-class LearningCompanion(protected val strategy: String, protected val weightStyle: String) {
+class LearningCompanion(protected val strategy: String, protected val weightStyle: String,
+                        protected val makeSymmetric: Boolean = false) {
     lateinit var weights: MutableMap<Int, Double>
     lateinit var similarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
 
@@ -44,6 +45,7 @@ class LearningCompanion(protected val strategy: String, protected val weightStyl
             println("The chosen classifier is $name")
             val similarity = normalizeMatrix(confusion)
             val fixedSimilarity = fixSimilarityMatrix(similarity)
+            val symmetric = makeSymmetric(fixedSimilarity)
             val weight = decideWeight(auc, kappa)
             weights[attribute.index()] = weight
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
@@ -51,8 +53,8 @@ class LearningCompanion(protected val strategy: String, protected val weightStyl
                 val attributeJMap = mutableMapOf<String, Double>()
                 print(attribute.value(i))
                 for (j in 0 until similarity.size) {
-                    attributeJMap[attribute.value(j)] = 1 - fixedSimilarity[i][j]
-                    print("|${fixedSimilarity[i][j]}|")
+                    attributeJMap[attribute.value(j)] = 1 - symmetric[i][j]
+                    print("|${symmetric[i][j]}|")
                 }
                 print("\n")
                 attributeIMap[attribute.value(i)] = attributeJMap
@@ -60,6 +62,22 @@ class LearningCompanion(protected val strategy: String, protected val weightStyl
             similarityMatrices[attribute.index()] = attributeIMap
             println("Attribute ${attribute.name()} has a weight $weight")
         }
+    }
+
+
+    private fun makeSymmetric(matrix: Array<DoubleArray>): Array<DoubleArray> {
+        if (!makeSymmetric) {
+            return matrix
+        }
+        val sizeX = matrix.size
+        val sizeY = matrix[0].size
+        val result = Array(sizeX) { _ -> DoubleArray(sizeY) }
+        for (i in 0 until sizeX) {
+            for (j in 0 until  sizeY) {
+                result[i][j] = (matrix[i][j] + matrix[j][i]) / 2
+            }
+        }
+        return result
     }
 
     // TODO: Add code to detect SVM from packages and flag to activate it

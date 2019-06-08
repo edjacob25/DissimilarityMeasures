@@ -119,7 +119,7 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     if verbose:
         print(f"Number of clusters for {filepath} is {num_classes}")
     num_procs = multiprocessing.cpu_count()
-    distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} -w {weight_strategy}\""
+    distance_function = f"\"weka.core.LearningBasedDissimilarity -R first-last -S {strategy} -w {weight_strategy} -s\""
     if other_measure is not None:
         distance_function = f"\"{other_measure}\""
     clusterer = f"weka.clusterers.CategoricalKMeans -init {start_mode} -max-candidates 100 -periodic-pruning 10000 " \

@@ -13,7 +13,7 @@ import math
 import requests
 from openpyxl import Workbook
 import git
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey, Boolean
+from sqlalchemy import create_engine, or_, Column, Integer, String, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -333,6 +333,51 @@ def create_report(experiment_set: int, base_path: str = ""):
     print(f"Saving to {save_path}")
     wb.save(save_path)
 
+def create_report_multiple(*args: int):
+    wb = Workbook()
+    ws = wb.active
+    engine = create_engine('sqlite:///results.db')
+    session_class = sessionmaker(bind=engine)
+    session = session_class()
+    headers = []
+    row = 1
+    last = ""
+    column = 2
+    sets = []
+    for experiment in session.query(Experiment).filter(or_(Experiment.set_id==v for v in args)).order_by(Experiment.file_name):
+        if last != experiment.file_name:
+            column = 2
+            row += 1
+            last = experiment.file_name
+            ws.cell(row=row, column=1, value=experiment.file_name.rsplit('/')[-1])
+        repo = git.Repo(search_parent_directories=True)
+        message = repo.commit(experiment.set.commit).message.strip()
+        header = f"{experiment.method.split('.')[-1]} - {message} - {experiment.set.commit}"
+        if header not in headers:
+            headers.append(header)
+        ws.cell(row=row, column=column, value=experiment.f_score)
+        column += 1
+
+    for i, header in enumerate(headers):
+        ws.cell(row=1, column=i + 2, value=header)
+        ws.cell(row=1, column=i + column + 2, value=header)
+
+    for i in range(2, row + 1):
+        base = ord('A') + column - 2
+        for j in range(column - 2):
+            item = ord('B') + j
+            ws.cell(row=i, column=j + column + 2, value=f"=RANK.AVG({chr(item)}{i},$B{i}:${chr(base)}{i})")
+
+    start = chr(ord('B') + column)
+    end = chr(ord('B') + column + column - 3)
+    for i in range(column - 2):
+        item = chr(ord('B') + i + column)
+        ws.cell(row=row + 3, column=i + column + 2, value=f"=AVERAGE({item}2:{item}{row + 1})")
+        ws.cell(row=row + 4, column=i + column + 2, value=f"=RANK({item}{row + 3},${start}{row + 3}:${end}{row + 3},1)")
+
+    save_path = os.path.join("results.xlsx")
+    print(f"Saving to {save_path}")
+    wb.save(save_path)
 
 def main():
     parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')

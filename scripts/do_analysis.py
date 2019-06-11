@@ -9,10 +9,10 @@ from datetime import datetime
 from itertools import product
 from shutil import copyfile
 
+import git
 import math
 import requests
 from openpyxl import Workbook
-import git
 from sqlalchemy import create_engine, or_, Column, Integer, String, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
@@ -48,6 +48,7 @@ class ExperimentSet(Base):
     number_of_datasets = Column(Integer)
     base_directory = Column(String)
     commit = Column(String)
+    description = Column(String)
     experiments = relationship("Experiment", order_by=Experiment.id, back_populates="set")
 
 
@@ -123,8 +124,8 @@ def cluster_dataset(filepath: str, classpath: str = None, no_classpath: bool = F
     if other_measure is not None:
         distance_function = f"\"{other_measure}\""
     clusterer = f"weka.clusterers.CategoricalKMeans -init {start_mode} -max-candidates 100 -periodic-pruning 10000 " \
-        f"-min-density 2.0 -t1 -1.25 -t2 -1.0 -N {num_classes} -A {distance_function} -I 500 " \
-        f"-num-slots {math.floor(num_procs / 3)} -S 10"
+                f"-min-density 2.0 -t1 -1.25 -t2 -1.0 -N {num_classes} -A {distance_function} -I 500 " \
+                f"-num-slots {math.floor(num_procs / 3)} -S 10"
     command.append(clusterer)
     command.append("-i")
     command.append(filepath)
@@ -230,6 +231,11 @@ def do_analysis(directory: str, verbose: bool, cp: str = None, measure_calculato
                     "weka.core.EuclideanDistance", "weka.core.ManhattanDistance", "weka.core.LinModified",
                     "weka.core.LinModified2", "weka.core.LinModified_Kappa", "weka.core.LinModified_MinusKappa",
                     "weka.core.LinModified_KappaMax"]
+
+        # measures = ["weka.core.EskinModified", "weka.core.GambaryanModified", "weka.core.GoodallModified",
+        #             "weka.core.OFModified", "weka.core.IOFModified", "weka.core.LinModified_Kappa",
+        #             "weka.core.LinModified_KappaMax"]
+
         measures = list(zip(measures, [None for _ in range(len(measures))]))
     else:
         strategies = ["A", "B", "C", "D", "E", "N"]
@@ -333,6 +339,7 @@ def create_report(experiment_set: int, base_path: str = ""):
     print(f"Saving to {save_path}")
     wb.save(save_path)
 
+
 def create_report_multiple(*args: int):
     wb = Workbook()
     ws = wb.active
@@ -344,7 +351,8 @@ def create_report_multiple(*args: int):
     last = ""
     column = 2
     sets = []
-    for experiment in session.query(Experiment).filter(or_(Experiment.set_id==v for v in args)).order_by(Experiment.file_name):
+    for experiment in session.query(Experiment).filter(or_(Experiment.set_id == v for v in args)).order_by(
+            Experiment.file_name):
         if last != experiment.file_name:
             column = 2
             row += 1
@@ -378,6 +386,7 @@ def create_report_multiple(*args: int):
     save_path = os.path.join("results.xlsx")
     print(f"Saving to {save_path}")
     wb.save(save_path)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Does the analysis of a directory containing categorical datasets')

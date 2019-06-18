@@ -1,6 +1,0 @@
-config.ini
-# Notebook Checkpoints
-.ipynb_checkpoints/
-*.db
-*.png
-__pycache__

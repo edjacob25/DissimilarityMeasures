@@ -13,9 +13,13 @@ import weka.core.Instances
 import java.util.*
 import kotlin.collections.HashMap
 
-class LearningCompanion(protected val strategy: String, protected val weightStyle: String,
-                        protected val makeSymmetric: Boolean = false) {
+class LearningCompanion(
+    protected val strategy: String, protected val weightStyle: String,
+    protected val makeSymmetric: Boolean = false,
+    protected val saveSecondWeight: Pair<Boolean, String> = Pair(false, "auc")
+) {
     lateinit var weights: MutableMap<Int, Double>
+    val weightsAlt: MutableMap<Int, Double> = HashMap()
     lateinit var similarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
 
     fun trainClassifiers(insts: Instances?) {
@@ -48,6 +52,15 @@ class LearningCompanion(protected val strategy: String, protected val weightStyl
             val symmetric = makeSymmetric(fixedSimilarity)
             val weight = decideWeight(auc, kappa)
             weights[attribute.index()] = weight
+
+            if (saveSecondWeight.first) {
+                weightsAlt[attribute.index()] = if (saveSecondWeight.second == "auc") {
+                    auc
+                } else {
+                    kappa
+                }
+            }
+
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
             for (i in 0 until similarity.size) {
                 val attributeJMap = mutableMapOf<String, Double>()
@@ -73,7 +86,7 @@ class LearningCompanion(protected val strategy: String, protected val weightStyl
         val sizeY = matrix[0].size
         val result = Array(sizeX) { _ -> DoubleArray(sizeY) }
         for (i in 0 until sizeX) {
-            for (j in 0 until  sizeY) {
+            for (j in 0 until sizeY) {
                 result[i][j] = (matrix[i][j] + matrix[j][i]) / 2
             }
         }
@@ -133,7 +146,6 @@ class LearningCompanion(protected val strategy: String, protected val weightStyl
             sets.add(Pair(training, test))
         }
         return sets
-
     }
 
     private fun printMatrix(confusionMatrix: Array<DoubleArray>) {

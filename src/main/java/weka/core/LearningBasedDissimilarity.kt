@@ -10,16 +10,22 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
     protected var strategy = "A"
     protected var weightStyle = "N"
     protected var symmetric = false
+    protected var saveSecond = Pair(true, "kappa")
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
-        learningCompanion = LearningCompanion(strategy, weightStyle, symmetric)
+        learningCompanion = LearningCompanion(strategy, weightStyle, symmetric, saveSecond)
         learningCompanion.trainClassifiers(instances)
     }
 
     override fun difference(index: Int, val1: String, val2: String): Double {
         if (learningCompanion.weights[index] == 0.0)
             return 0.0
+
+        if (saveSecond.first) {
+            return learningCompanion.weightsAlt[index]!! * learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
+        }
+
         return learningCompanion.weights[index]!! * learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
     }
 

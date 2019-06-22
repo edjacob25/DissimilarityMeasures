@@ -23,7 +23,11 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
             return 0.0
 
         if (saveSecond.first) {
-            return (1 -learningCompanion.weightsAlt[index]!!) * learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
+            val weight = learningCompanion.weightsAlt[index]!!
+            if (weight < 0.5) {
+                return 1.0
+            }
+            return (1 - weight) * learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
         }
 
         return learningCompanion.weights[index]!! * learningCompanion.similarityMatrices[index]!![val1]!![val2]!!

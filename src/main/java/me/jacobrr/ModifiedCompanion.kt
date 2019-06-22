@@ -3,7 +3,7 @@ package me.jacobrr
 import weka.core.Instances
 
 class ModifiedCompanion(instances: Instances) {
-    private val learningCompanion = LearningCompanion("N", "A")
+    private val learningCompanion = LearningCompanion("N", "K")
 
     init {
         learningCompanion.trainClassifiers(instances)

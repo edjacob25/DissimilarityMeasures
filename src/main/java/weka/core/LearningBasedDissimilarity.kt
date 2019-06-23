@@ -10,7 +10,7 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
     protected var strategy = "A"
     protected var weightStyle = "N"
     protected var symmetric = false
-    protected var saveSecond = Pair(true, "auc")
+    protected var saveSecond = Pair(true, "kappa")
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)

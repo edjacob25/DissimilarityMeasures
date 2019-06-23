@@ -14,7 +14,7 @@ class ModifiedCompanion(instances: Instances) {
         if (weight < 0.5) {
             return 1.0
         }
-        val normalized = (1 - weight) * baseDifference
+        val normalized = (weight) * baseDifference
         return normalized
     }
 }

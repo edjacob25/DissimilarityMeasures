@@ -12,7 +12,7 @@ class ModifiedCompanion(instances: Instances) {
     fun calculateDistance(baseDifference: Double, index: Int): Double {
         val weight = learningCompanion.weights[index]!!
         if (weight < 0.5) {
-            return 1.0
+            return baseDifference
         }
         val normalized = (weight) * baseDifference
         return normalized

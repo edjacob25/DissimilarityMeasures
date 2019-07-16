@@ -61,19 +61,25 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
             val diff: Double
             val value1 = first.stringValue(firstI)
             val value2 = second.stringValue(secondI)
-            when {
-                firstI == secondI -> {
-                    diff = difference(firstI, value1, value2)
-                    p1++
-                    p2++
-                }
-                firstI > secondI -> {
-                    diff = difference(secondI, "", value2)
-                    p2++
-                }
-                else -> {
-                    diff = difference(firstI, value1, "")
-                    p1++
+            if (value1 == "?" || value2 == "?") {
+                diff = 1.0
+                p1++
+                p2++
+            } else {
+                when {
+                    firstI == secondI -> {
+                        diff = difference(firstI, value1, value2)
+                        p1++
+                        p2++
+                    }
+                    firstI > secondI -> {
+                        diff = difference(secondI, "", value2)
+                        p2++
+                    }
+                    else -> {
+                        diff = difference(firstI, value1, "")
+                        p1++
+                    }
                 }
             }
             stats?.incrCoordCount()

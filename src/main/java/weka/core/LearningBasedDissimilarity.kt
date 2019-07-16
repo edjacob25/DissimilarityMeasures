@@ -25,7 +25,7 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         if (saveSecond.first) {
             val weight = learningCompanion.weightsAlt[index]!!
             if (weight < 0.5) {
-               return 0.0
+                return 0.0
             }
             return weight * learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
         }
@@ -88,6 +88,4 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         result.add(weightStyle)
         return result.toTypedArray()
     }
-
-
 }

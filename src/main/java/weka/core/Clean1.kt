@@ -59,7 +59,7 @@ open class Clean : BaseCategoricalDistance() {
                 results.add(evaluateClassifier(instances, classifier))
             }
 
-            val (confusion, auc, kappa, name) = results.maxBy { it.auc }!!
+            val (confusion, _, kappa, name) = results.maxBy { it.auc }!!
             println("The chosen classifier is $name")
             val size = confusion.size
             val simmilarity = normalizeMatrix(confusion)
@@ -71,7 +71,7 @@ open class Clean : BaseCategoricalDistance() {
             printMatrix(simmilarity, "simmilarity when diagonal set to 1")
             weights[attribute.index()] = kappa
 
-            var dissimilarity = Array(size) {DoubleArray(size)}
+            var dissimilarity = Array(size) { DoubleArray(size) }
             for (i in 0 until size) {
                 for (j in 0 until size) {
                     dissimilarity[i][j] = 1 - simmilarity[i][j]
@@ -172,7 +172,7 @@ open class Clean : BaseCategoricalDistance() {
             val newRow = DoubleArray(size)
             var i = 0
             for (value in row) {
-                if (sum > 0.0){
+                if (sum > 0.0) {
                     newRow[i] = row[i] / sum
                 } else {
                     newRow[i] = 0.0

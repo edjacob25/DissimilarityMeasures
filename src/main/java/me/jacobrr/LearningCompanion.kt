@@ -45,7 +45,11 @@ class LearningCompanion(
             for (classifier in classifiers) {
                 results.add(evaluateClassifier(instances, classifier))
             }
-            val (confusion, auc, kappa, name) = results.maxBy { it.auc }!!
+            val (confusion, auc, kappa, name) = if (weightStyle == "K") {
+                results.maxBy { it.kappa }!!
+            } else {
+                results.maxBy { it.auc }!!
+            }
             println("The chosen classifier is $name")
             val similarity = normalizeMatrix(confusion)
             val fixedSimilarity = fixSimilarityMatrix(similarity)

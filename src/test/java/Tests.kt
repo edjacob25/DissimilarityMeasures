@@ -1,6 +1,7 @@
 package tests
 
 import org.junit.Assert
+import weka.clusterers.CategoricalKMeans
 import weka.core.*
 import weka.core.converters.ConverterUtils
 import weka.filters.Filter
@@ -75,6 +76,22 @@ class TestSource {
             "Last"
         )
         Filter.runFilter(AddCluster(), command)
+    }
+
+    @test
+    fun CleanTest() {
+        val instances = loadDataset("F:\\Datasets\\Categorical\\balloons.arff")
+        val measure = Clean()
+        measure.instances = instances
+
+
+        val kmeans = CategoricalKMeans()
+        kmeans.distanceFunction = measure
+        kmeans.buildClusterer(instances)
+        val instance = instances[0]
+        kmeans.clusterInstance(instance)
+
+        Assert.assertEquals(true, true)
     }
 }
 

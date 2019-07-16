@@ -14,8 +14,8 @@ import kotlin.collections.HashMap
 
 open class Clean : BaseCategoricalDistance() {
 
-    lateinit var weights: MutableMap<Int, Double>
-    lateinit var dissimilarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
+    private lateinit var weights: MutableMap<Int, Double>
+    private lateinit var dissimilarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
@@ -37,7 +37,7 @@ open class Clean : BaseCategoricalDistance() {
         return "This is the learning based measure, designed for categorical data"
     }
 
-    fun trainClassifiers(insts: Instances?) {
+    private fun trainClassifiers(insts: Instances?) {
         val instances = Instances(insts)
         weights = HashMap()
         dissimilarityMatrices = HashMap()
@@ -63,24 +63,23 @@ open class Clean : BaseCategoricalDistance() {
             println("The chosen classifier is $name")
             val size = confusion.size
             val simmilarity = normalizeMatrix(confusion)
+            printMatrix(confusion, "confusion")
+            printMatrix(simmilarity, "simmilarity")
             for (i in 0 until size) {
                 simmilarity[i][i] = 1.0
             }
+            printMatrix(simmilarity, "simmilarity when diagonal set to 1")
             weights[attribute.index()] = kappa
 
             var dissimilarity = Array(size) {DoubleArray(size)}
-            var i = 0
-            for (row in simmilarity) {
-                var j = 0
-                for (value in row) {
-                    dissimilarity[i][j] = 1 - row[i]
-                    j += 1
+            for (i in 0 until size) {
+                for (j in 0 until size) {
+                    dissimilarity[i][j] = 1 - simmilarity[i][j]
                 }
-                i += 1
             }
-            
+            printMatrix(dissimilarity, "dissimilarity")
             dissimilarity = normalizeMatrix(dissimilarity)
-
+            printMatrix(dissimilarity, "dissimilarity normalized")
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
             for (i in 0 until dissimilarity.size) {
                 val attributeJMap = mutableMapOf<String, Double>()
@@ -152,8 +151,8 @@ open class Clean : BaseCategoricalDistance() {
         return sets
     }
 
-    private fun printMatrix(confusionMatrix: Array<DoubleArray>) {
-
+    private fun printMatrix(confusionMatrix: Array<DoubleArray>, title: String = "") {
+        println(title)
         for (i in 0 until confusionMatrix.size) {
             for (j in 0 until confusionMatrix.size) {
                 print("|${confusionMatrix[i][j]}|")
@@ -173,7 +172,12 @@ open class Clean : BaseCategoricalDistance() {
             val newRow = DoubleArray(size)
             var i = 0
             for (value in row) {
-                newRow[i] = row[i] / sum
+                if (sum > 0.0){
+                    newRow[i] = row[i] / sum
+                } else {
+                    newRow[i] = 0.0
+                }
+
                 i += 1
             }
             result.add(newRow)

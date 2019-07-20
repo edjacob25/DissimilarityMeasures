@@ -3,16 +3,19 @@ package me.jacobrr
 import weka.core.Instances
 import weka.core.Option
 import weka.core.Utils
+import java.io.Serializable
 import java.util.*
 
 class ModifiedCompanion(
-    instances: Instances, private var option: ModifiedOption = ModifiedOption.BASE,
+    private var option: ModifiedOption = ModifiedOption.BASE,
     private var multiply: MultiplyOption = MultiplyOption.NORMAL,
     private var weight: String = "A"
-) {
-    private val learningCompanion = LearningCompanion("N", weight, weight)
+): Serializable {
 
-    init {
+    private lateinit var learningCompanion: LearningCompanion
+
+    fun createLearningCompanion(instances: Instances) {
+        learningCompanion = LearningCompanion("N", weight, weight)
         learningCompanion.trainClassifiers(instances)
     }
 

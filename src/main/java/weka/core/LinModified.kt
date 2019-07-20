@@ -5,11 +5,11 @@ import java.util.*
 import kotlin.math.ln
 
 open class LinModified : BaseCategoricalDistance() {
-    protected lateinit var modifiedCompanion: ModifiedCompanion
+    private val modifiedCompanion = ModifiedCompanion()
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
-        modifiedCompanion = ModifiedCompanion(instances)
+        modifiedCompanion.createLearningCompanion(instances)
     }
 
     override fun difference(index: Int, val1: String, val2: String): Double {

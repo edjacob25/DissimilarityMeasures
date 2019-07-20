@@ -4,6 +4,7 @@ import me.jacobrr.LearningCompanion
 import me.jacobrr.ModifiedOption
 import me.jacobrr.MultiplyOption
 import me.jacobrr.toEnumeration
+import java.lang.Exception
 import java.util.*
 
 open class LearningBasedDissimilarity : BaseCategoricalDistance() {
@@ -24,10 +25,11 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
     override fun difference(index: Int, val1: String, val2: String): Double {
         val weight = learningCompanion.weights[index]!!
-        val baseDifference = learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
+
         if (weight == 0.0)
             return 0.0
 
+        val baseDifference = learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
         if (weight < 0.5) {
             when (option) {
                 ModifiedOption.BASE -> println("Base case")

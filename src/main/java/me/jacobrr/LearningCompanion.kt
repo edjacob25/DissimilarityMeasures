@@ -14,18 +14,18 @@ import java.util.*
 import kotlin.collections.HashMap
 
 class LearningCompanion(
-    protected val strategy: String, protected val weightStyle: String,
-    protected val makeSymmetric: Boolean = false,
-    protected val saveSecondWeight: Pair<Boolean, String> = Pair(false, "auc")
+    private val strategy: String, private val multiplyWeight: String,
+    private val decideWeight: String,
+    private val makeSymmetric: Boolean = false
 ) {
     lateinit var weights: MutableMap<Int, Double>
-    val weightsAlt: MutableMap<Int, Double> = HashMap()
     lateinit var similarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
 
     fun trainClassifiers(insts: Instances?) {
         val instances = Instances(insts)
         println("Chosen strategy is $strategy")
-        println("Chosen weight style is $weightStyle")
+        println("Chosen weight to multiply is $multiplyWeight")
+        println("Chosen weight to decide is $decideWeight")
         weights = HashMap()
         similarityMatrices = HashMap()
         for (attribute in instances.enumerateAttributes()) {
@@ -45,7 +45,7 @@ class LearningCompanion(
             for (classifier in classifiers) {
                 results.add(evaluateClassifier(instances, classifier))
             }
-            val (confusion, auc, kappa, name) = if (weightStyle == "K") {
+            val (confusion, auc, kappa, name) = if (decideWeight == "K") {
                 results.maxBy { it.kappa }!!
             } else {
                 results.maxBy { it.auc }!!
@@ -54,16 +54,9 @@ class LearningCompanion(
             val similarity = normalizeMatrix(confusion)
             val fixedSimilarity = fixSimilarityMatrix(similarity)
             val symmetric = makeSymmetric(fixedSimilarity)
-            val weight = decideWeight(auc, kappa)
+            val weight = decideMultiplyWeight(auc, kappa)
             weights[attribute.index()] = weight
 
-            if (saveSecondWeight.first) {
-                weightsAlt[attribute.index()] = if (saveSecondWeight.second == "auc") {
-                    auc
-                } else {
-                    kappa
-                }
-            }
 
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
             for (i in 0 until similarity.size) {
@@ -230,11 +223,11 @@ class LearningCompanion(
         return normalizeMatrix(confusionMatrix)
     }
 
-    private fun decideWeight(auc: Double, kappa: Double): Double {
-        if (weightStyle == "A") {
+    private fun decideMultiplyWeight(auc: Double, kappa: Double): Double {
+        if (multiplyWeight == "A") {
             return auc
         }
-        if (weightStyle == "K") {
+        if (multiplyWeight == "K") {
             return kappa
         }
         return 1.0
@@ -261,7 +254,7 @@ class LearningCompanion(
     }
 }
 
-private data class ClassifierResult(
+ data class ClassifierResult(
     val confusionMatrix: Array<DoubleArray>,
     val auc: Double,
     val kappa: Double,

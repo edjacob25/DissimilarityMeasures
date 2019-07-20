@@ -1,36 +1,52 @@
 package weka.core
 
 import me.jacobrr.LearningCompanion
+import me.jacobrr.ModifiedOption
+import me.jacobrr.MultiplyOption
 import me.jacobrr.toEnumeration
 import java.util.*
 
 open class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
-    protected lateinit var learningCompanion: LearningCompanion
-    protected var strategy = "A"
-    protected var weightStyle = "N"
-    protected var symmetric = false
-    protected var saveSecond = Pair(true, "kappa")
+    private lateinit var learningCompanion: LearningCompanion
+    private var strategy = "A"
+    private var multiplyWeight = "N"
+    private var decideWeight = "A"
+    private var symmetric = false
+    private var option: ModifiedOption = ModifiedOption.BASE
+    private var multiplyOption: MultiplyOption = MultiplyOption.NORMAL
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
-        learningCompanion = LearningCompanion(strategy, weightStyle, symmetric, saveSecond)
+        learningCompanion = LearningCompanion(strategy, multiplyWeight, decideWeight, symmetric)
         learningCompanion.trainClassifiers(instances)
     }
 
     override fun difference(index: Int, val1: String, val2: String): Double {
-        if (learningCompanion.weights[index] == 0.0)
+        val weight = learningCompanion.weights[index]!!
+        val baseDifference = learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
+        if (weight == 0.0)
             return 0.0
 
-        if (saveSecond.first) {
-            val weight = learningCompanion.weightsAlt[index]!!
-            if (weight < 0.5) {
-                return 0.0
+        if (weight < 0.5) {
+            when (option) {
+                ModifiedOption.BASE -> println("Base case")
+                ModifiedOption.DISCARD_LOW -> return 0.0
+                ModifiedOption.MAX_LOW -> return 1.0
+                ModifiedOption.BASE_LOW -> return if (val1 == val2){
+                    0.0
+                }                                                                                                                                                                            else{
+                    1.0
+                }
             }
-            return weight * learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
         }
 
-        return learningCompanion.weights[index]!! * learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
+        val normalized = when (multiplyOption) {
+            MultiplyOption.NORMAL -> weight * baseDifference
+            MultiplyOption.ONE_MINUS -> (1 - weight) * baseDifference
+        }
+
+        return normalized
     }
 
     override fun updateDistance(currDist: Double, diff: Double): Double {
@@ -52,8 +68,28 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         )
         result.add(
             Option(
-                "Which weight is going to be used. Options are K for kappa, A for Auc and N for a " +
-                        "uniform weight. Defaults to N", "w", 1, "-w <weight>"
+                "Which weight is going to be used to decide. Options are K for kappa and A for Auc." +
+                        "Defaults to A, and if -W is set, it uses that", "w", 1, "-w <weight>"
+            )
+        )
+
+        result.add(
+            Option(
+                "Which weight is going to be used to multiply. Options are K for kappa, A for Auc and N for a " +
+                        "uniform weight. Defaults to N", "W", 1, "-W <weight>"
+            )
+        )
+        result.add(
+            Option(
+                "Which option of kappa is going to be used. Options are B for Base, D for discard when the " +
+                        "weight is low, M for mac when the weight is low and L to not multiply for the weight when is " +
+                        "low. Defaults to B", "o", 1, "-o <option>"
+            )
+        )
+        result.add(
+            Option(
+                "Which weight type is going to be used. Options are N for normal, I for 1 - weight. Defaults " +
+                        "to N", "t", 1, "-t <weightType>"
             )
         )
 
@@ -71,9 +107,31 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         if (strat.isNotEmpty()) {
             strategy = strat
         }
-        val weight = Utils.getOption('w', options)
-        if (weight.isNotEmpty()) {
-            weightStyle = weight
+        val mWeight = Utils.getOption('W', options)
+        if (mWeight.isNotEmpty()) {
+            multiplyWeight = mWeight
+        }
+
+        val dWeight = Utils.getOption('w', options)
+        if (dWeight.isNotEmpty()) {
+            decideWeight = dWeight
+        }
+        else if (mWeight.isNotEmpty()){
+            decideWeight = mWeight
+        }
+
+        val mOption = Utils.getOption('o', options)
+        option = when (mOption) {
+            "D" -> ModifiedOption.DISCARD_LOW
+            "M" -> ModifiedOption.MAX_LOW
+            "L" -> ModifiedOption.BASE_LOW
+            else -> ModifiedOption.BASE
+        }
+
+        val type = Utils.getOption('t', options)
+        multiplyOption = when (type) {
+            "I" -> MultiplyOption.ONE_MINUS
+            else -> MultiplyOption.NORMAL
         }
 
         val symmetricFlag = Utils.getFlag('s', options)
@@ -85,7 +143,11 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         result.add("-S")
         result.add(strategy)
         result.add("-w")
-        result.add(weightStyle)
+        result.add(multiplyWeight)
+        result.add("-o")
+        result.add(option.s)
+        result.add("-t")
+        result.add(multiplyOption.s)
         return result.toTypedArray()
     }
 }

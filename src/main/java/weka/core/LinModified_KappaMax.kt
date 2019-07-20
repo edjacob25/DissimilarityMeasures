@@ -9,7 +9,7 @@ open class LinModified_KappaMax : BaseCategoricalDistance() {
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
-        learningCompanion = LearningCompanion("N", "K")
+        learningCompanion = LearningCompanion("N", "K", "A")
         learningCompanion.trainClassifiers(instances)
 
         for (weight in learningCompanion.weights) {

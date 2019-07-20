@@ -4,9 +4,9 @@ import weka.core.Instances
 
 class ModifiedCompanion(
     instances: Instances, private val option: ModifiedOption, private val multiply: MultiplyOption,
-    weighStyle: String
+    weight: String
 ) {
-    private val learningCompanion = LearningCompanion("N", weighStyle)
+    private val learningCompanion = LearningCompanion("N", weight, weight)
 
     init {
         learningCompanion.trainClassifiers(instances)
@@ -30,16 +30,4 @@ class ModifiedCompanion(
         }
         return normalized
     }
-}
-
-enum class ModifiedOption(val s: String) {
-    BASE("B"),
-    DISCARD_LOW("D"),
-    MAX_LOW("M"),
-    BASE_LOW("L")
-}
-
-enum class MultiplyOption(val s: String) {
-    NORMAL("N"),
-    ONE_MINUS("I")
 }

@@ -30,9 +30,8 @@ open class LinModified : BaseCategoricalDistance() {
     }
 
     override fun updateDistance(currDist: Double, diff: Double): Double {
-        return currDist + diff
+        return modifiedCompanion.updateDistance(currDist, diff)
     }
-
 
     override fun globalInfo(): String {
         return "This is the Lin measure, designed for categorical data"

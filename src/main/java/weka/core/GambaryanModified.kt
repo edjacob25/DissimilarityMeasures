@@ -16,6 +16,10 @@ class GambaryanModified : Gambaryan() {
         return modifiedCompanion.calculateDistance(baseDifference, index)
     }
 
+    override fun updateDistance(currDist: Double, diff: Double): Double {
+        return modifiedCompanion.updateDistance(currDist, diff)
+    }
+
     override fun listOptions(): Enumeration<Option> {
         return modifiedCompanion.listOptions(super.listOptions())
     }

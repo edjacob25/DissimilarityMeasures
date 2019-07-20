@@ -38,6 +38,10 @@ class ModifiedCompanion(
         return normalized
     }
 
+    fun updateDistance(currDist: Double, diff: Double): Double {
+        return currDist + diff
+    }
+
     fun listOptions(options: Enumeration<Option>): Enumeration<Option> {
         // TODO: Fix options not appearing in the Weka UI
         val result = options.toList().toMutableList()

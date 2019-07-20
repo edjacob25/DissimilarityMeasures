@@ -254,7 +254,7 @@ class LearningCompanion(
     }
 }
 
- data class ClassifierResult(
+data class ClassifierResult(
     val confusionMatrix: Array<DoubleArray>,
     val auc: Double,
     val kappa: Double,

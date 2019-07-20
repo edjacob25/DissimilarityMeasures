@@ -2,6 +2,7 @@ package weka.core
 
 import me.jacobrr.LearningCompanion
 import weka.core.neighboursearch.PerformanceStats
+import kotlin.math.ln
 
 open class LinModified_Kappa : BaseCategoricalDistance() {
     protected lateinit var learningCompanion: LearningCompanion
@@ -34,15 +35,15 @@ open class LinModified_Kappa : BaseCategoricalDistance() {
 
     override fun difference(index: Int, val1: String, val2: String): Double {
         val lowerLimit = if (val1 == val2) {
-            2 * Math.log(instances.size.toDouble())
+            2 * ln(instances.size.toDouble())
         } else {
-            2 * Math.log(instances.size.toDouble() / 2)
+            2 * ln(instances.size.toDouble() / 2)
         }
 
         val lin = if (val1 == val2) {
-            2 * Math.log(probabilityA(index, val1))
+            2 * ln(probabilityA(index, val1))
         } else {
-            2 * Math.log(probabilityA(index, val1) + probabilityA(index, val2))
+            2 * ln(probabilityA(index, val1) + probabilityA(index, val2))
         }
         val kappa = learningCompanion.weights[index]!!
         val normalizedLin = kappa * lin

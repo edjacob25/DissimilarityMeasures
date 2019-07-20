@@ -4,7 +4,6 @@ import me.jacobrr.LearningCompanion
 import me.jacobrr.ModifiedOption
 import me.jacobrr.MultiplyOption
 import me.jacobrr.toEnumeration
-import java.lang.Exception
 import java.util.*
 
 open class LearningBasedDissimilarity : BaseCategoricalDistance() {
@@ -35,9 +34,9 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
                 ModifiedOption.BASE -> Unit
                 ModifiedOption.DISCARD_LOW -> return 0.0
                 ModifiedOption.MAX_LOW -> return 1.0
-                ModifiedOption.BASE_LOW -> return if (val1 == val2){
+                ModifiedOption.BASE_LOW -> return if (val1 == val2) {
                     0.0
-                }                                                                                                                                                                            else{
+                } else {
                     1.0
                 }
             }
@@ -117,8 +116,7 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         val dWeight = Utils.getOption('w', options)
         if (dWeight.isNotEmpty()) {
             decideWeight = dWeight
-        }
-        else if (mWeight.isNotEmpty()){
+        } else if (mWeight.isNotEmpty()) {
             decideWeight = mWeight
         }
 

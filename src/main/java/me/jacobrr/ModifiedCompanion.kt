@@ -1,10 +1,14 @@
 package me.jacobrr
 
 import weka.core.Instances
+import weka.core.Option
+import weka.core.Utils
+import java.util.*
 
 class ModifiedCompanion(
-    instances: Instances, private val option: ModifiedOption, private val multiply: MultiplyOption,
-    weight: String
+    instances: Instances, private var option: ModifiedOption = ModifiedOption.BASE,
+    private var multiply: MultiplyOption = MultiplyOption.NORMAL,
+    private var weight: String = "A"
 ) {
     private val learningCompanion = LearningCompanion("N", weight, weight)
 
@@ -29,5 +33,63 @@ class ModifiedCompanion(
             MultiplyOption.ONE_MINUS -> (1 - weight) * baseDifference
         }
         return normalized
+    }
+
+    fun listOptions(options: Enumeration<Option>): Enumeration<Option> {
+        // TODO: Fix options not appearing in the Weka UI
+        val result = options.toList().toMutableList()
+        result.add(
+            Option(
+                "Which weight is going to be used. Options are K for kappa, A for Auc and N for a " +
+                        "uniform weight. Defaults to N", "w", 1, "-w <weight>"
+            )
+        )
+        result.add(
+            Option(
+                "Which option of kappa is going to be used. Options are B for Base, D for discard when the " +
+                        "weight is low, M for mac when the weight is low and L to not multiply for the weight when is " +
+                        "low. Defaults to B", "o", 1, "-o <option>"
+            )
+        )
+        result.add(
+            Option(
+                "Which weight type is going to be used. Options are N for normal, I for 1 - weight. Defaults " +
+                        "to N", "t", 1, "-t <weightType>"
+            )
+        )
+
+        return result.toEnumeration()
+    }
+
+    fun getOptions(original: Array<String>): Array<String> {
+        val result = original.toMutableList()
+        result.add("-w")
+        result.add(weight)
+        result.add("-o")
+        result.add(option.s)
+        result.add("-t")
+        result.add(multiply.s)
+        return result.toTypedArray()
+    }
+
+    fun setOptions(options: Array<out String>?) {
+
+        val sWeight = Utils.getOption('w', options)
+        if (sWeight.isNotEmpty()) {
+            weight = sWeight
+        }
+        val mOption = Utils.getOption('o', options)
+        option = when (mOption) {
+            "D" -> ModifiedOption.DISCARD_LOW
+            "M" -> ModifiedOption.MAX_LOW
+            "L" -> ModifiedOption.BASE_LOW
+            else -> ModifiedOption.BASE
+        }
+
+        val type = Utils.getOption('t', options)
+        multiply = when (type) {
+            "I" -> MultiplyOption.ONE_MINUS
+            else -> MultiplyOption.NORMAL
+        }
     }
 }

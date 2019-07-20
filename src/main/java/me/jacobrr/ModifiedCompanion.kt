@@ -17,7 +17,7 @@ class ModifiedCompanion(
 
         if (weight < 0.5) {
             when (option) {
-                ModifiedOption.BASE -> println("Base case")
+                ModifiedOption.BASE -> Unit
                 ModifiedOption.DISCARD_LOW -> return 0.0
                 ModifiedOption.MAX_LOW -> return 1.0
                 ModifiedOption.BASE_LOW -> return baseDifference

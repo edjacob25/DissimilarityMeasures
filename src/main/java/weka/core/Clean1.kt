@@ -1,5 +1,6 @@
 package weka.core
 
+import me.jacobrr.ClassifierResult
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
 import weka.classifiers.bayes.BayesNet
@@ -205,10 +206,3 @@ open class Clean : BaseCategoricalDistance() {
         return sum / count
     }
 }
-
-private data class ClassifierResult(
-    val confusionMatrix: Array<DoubleArray>,
-    val auc: Double,
-    val kappa: Double,
-    val name: String
-)

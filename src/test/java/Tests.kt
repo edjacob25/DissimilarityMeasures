@@ -58,6 +58,7 @@ class TestSource {
         Assert.assertEquals(true, true)
     }
 
+    @test
     fun CategoricalKMeansTest() {
         //java -Xmx8192m  -W 'weka.clusterers.CategoricalKMeans -init 1 -max-candidates 100 -periodic-pruning 10000
         // -min-density 2.0 -t1 -1.25 -t2 -1.0 -N 16 -A "weka.core.LearningBasedDissimilarity -R first-last -S A -w N"
@@ -66,12 +67,12 @@ class TestSource {
         val command = arrayOf(
             "-W",
             "weka.clusterers.CategoricalKMeans -init 0 -max-candidates 100 -periodic-pruning 10000 -min-density 2.0 " +
-                    "-t1 -1.25 -t2 -1.0 -N 16 -A \"weka.core.LearningBasedDissimilarity -R first-last\" " +
+                    "-t1 -1.25 -t2 -1.0 -N 16 -M -A \"weka.core.LearningBasedDissimilarity -w A -o D -t I -R first-last\" " +
                     "-I 500 -num-slots 4 -S 10",
             "-i",
-            "F:\\Datasets\\CleanedDatasets2\\arrhythmia_cleaned.arff",
+            "F:\\Datasets\\Categorical\\balloons.arff",
             "-o",
-            "F:\\Datasets\\CleanedDatasets2\\arrhythmia_cleaned_clustered.arff",
+            "F:\\Datasets\\Categorical\\balloons_clustered.arff",
             "-I",
             "Last"
         )

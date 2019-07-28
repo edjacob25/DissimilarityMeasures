@@ -9,5 +9,6 @@ enum class ModifiedOption(val s: String) {
 
 enum class MultiplyOption(val s: String) {
     NORMAL("N"),
-    ONE_MINUS("I")
+    ONE_MINUS("I"),
+    NO_MULTIPLY("O")
 }

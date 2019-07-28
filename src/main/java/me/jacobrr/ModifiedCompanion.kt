@@ -34,6 +34,7 @@ class ModifiedCompanion(
         val normalized = when (multiply) {
             MultiplyOption.NORMAL -> weight * baseDifference
             MultiplyOption.ONE_MINUS -> (1 - weight) * baseDifference
+            else -> baseDifference
         }
         return normalized
     }

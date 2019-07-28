@@ -45,6 +45,7 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         val normalized = when (multiplyOption) {
             MultiplyOption.NORMAL -> weight * baseDifference
             MultiplyOption.ONE_MINUS -> (1 - weight) * baseDifference
+            else -> baseDifference
         }
 
         return normalized
@@ -131,7 +132,8 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         val type = Utils.getOption('t', options)
         multiplyOption = when (type) {
             "I" -> MultiplyOption.ONE_MINUS
-            else -> MultiplyOption.NORMAL
+            "N" -> MultiplyOption.NORMAL
+            else -> MultiplyOption.NO_MULTIPLY
         }
 
         val symmetricFlag = Utils.getFlag('s', options)

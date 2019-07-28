@@ -34,7 +34,7 @@ class LearningCompanion(
 
             val stats = instances.attributeStats(attribute.index())
 
-            if (attribute.numValues() > 50 || !stats.nominalCounts.all { it > 0 }) {
+            if (attribute.numValues() > 50 || !stats.nominalCounts.all { it > 0 } || stats.missingCount > stats.totalCount / 2) {
                 weights[attribute.index()] = 0.0
                 println("Attribute ${attribute.name()} has a weight 0, meaning it won't be taken on account when calculating the dissimilarity")
                 continue

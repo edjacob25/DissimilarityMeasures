@@ -13,12 +13,13 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
     private var multiplyWeight = "N"
     private var decideWeight = "A"
     private var symmetric = false
+    private var normalizeDissimilarity = false
     private var option: ModifiedOption = ModifiedOption.BASE
     private var multiplyOption: MultiplyOption = MultiplyOption.NORMAL
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
-        learningCompanion = LearningCompanion(strategy, multiplyWeight, decideWeight, symmetric)
+        learningCompanion = LearningCompanion(strategy, multiplyWeight, decideWeight, symmetric, normalizeDissimilarity)
         learningCompanion.trainClassifiers(instances)
     }
 
@@ -28,7 +29,7 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         if (weight == 0.0)
             return 0.0
 
-        val baseDifference = learningCompanion.similarityMatrices[index]!![val1]!![val2]!!
+        val baseDifference = learningCompanion.dissimilarityMatrices[index]!![val1]!![val2]!!
         if (weight < 0.5) {
             when (option) {
                 ModifiedOption.BASE -> Unit
@@ -100,6 +101,13 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
                 "Whether to make the similarity matrix symmetric", "s", 0, "-s"
             )
         )
+
+        result.add(
+            Option(
+                "Whether to make the dissimilarity matrix normalized", "n", 0, "-n"
+            )
+        )
+
         return result.toEnumeration()
     }
 
@@ -138,6 +146,9 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
         val symmetricFlag = Utils.getFlag('s', options)
         symmetric = symmetricFlag
+
+        val normalizedFlag = Utils.getFlag('s', options)
+        normalizeDissimilarity = normalizedFlag
     }
 
     override fun getOptions(): Array<String> {

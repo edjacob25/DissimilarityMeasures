@@ -10,24 +10,24 @@ import weka.classifiers.lazy.KStar
 import weka.classifiers.meta.Bagging
 import weka.classifiers.trees.RandomForest
 import weka.core.Instances
+import weka.core.LearningBasedDissimilarity
 import java.util.*
 import kotlin.collections.HashMap
 
 class LearningCompanion(
     private val strategy: String, private val multiplyWeight: String,
     private val decideWeight: String,
-    private val makeSymmetric: Boolean = false
+    private val makeSymmetric: Boolean = false,
+    private val normalizeDissimilarity: Boolean = false
 ) {
-    lateinit var weights: MutableMap<Int, Double>
-    lateinit var similarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>>
+    var weights: MutableMap<Int, Double> = HashMap()
+    var dissimilarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>> = HashMap()
 
     fun trainClassifiers(insts: Instances?) {
         val instances = Instances(insts)
         println("Chosen strategy is $strategy")
         println("Chosen weight to multiply is $multiplyWeight")
         println("Chosen weight to decide is $decideWeight")
-        weights = HashMap()
-        similarityMatrices = HashMap()
         for (attribute in instances.enumerateAttributes()) {
             val isLessThan1000 = instances.numInstances() < 1000
             val classifiers = initializeClassifiers(isLessThan1000)
@@ -57,19 +57,29 @@ class LearningCompanion(
             val weight = decideMultiplyWeight(auc, kappa)
             weights[attribute.index()] = weight
 
+            val size = confusion.size
+            var dissimilarity = Array(size) { DoubleArray(size) }
+            for (i in 0 until size) {
+                for (j in 0 until size) {
+                    dissimilarity[i][j] = 1 - symmetric[i][j]
+                }
+            }
+            if (normalizeDissimilarity) {
+                dissimilarity = normalizeMatrix(dissimilarity)
+            }
 
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
             for (i in 0 until similarity.size) {
                 val attributeJMap = mutableMapOf<String, Double>()
                 print(attribute.value(i))
                 for (j in 0 until similarity.size) {
-                    attributeJMap[attribute.value(j)] = 1 - symmetric[i][j]
-                    print("|${symmetric[i][j]}|")
+                    attributeJMap[attribute.value(j)] = dissimilarity[i][j]
+                    print("|${dissimilarity[i][j]}|")
                 }
                 print("\n")
                 attributeIMap[attribute.value(i)] = attributeJMap
             }
-            similarityMatrices[attribute.index()] = attributeIMap
+            dissimilarityMatrices[attribute.index()] = attributeIMap
             println("Attribute ${attribute.name()} has a weight $weight")
         }
     }
@@ -81,7 +91,7 @@ class LearningCompanion(
         }
         val sizeX = matrix.size
         val sizeY = matrix[0].size
-        val result = Array(sizeX) { _ -> DoubleArray(sizeY) }
+        val result = Array(sizeX) { DoubleArray(sizeY) }
         for (i in 0 until sizeX) {
             for (j in 0 until sizeY) {
                 result[i][j] = (matrix[i][j] + matrix[j][i]) / 2

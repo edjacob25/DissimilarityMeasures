@@ -147,6 +147,7 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         val symmetricFlag = Utils.getFlag('s', options)
         symmetric = symmetricFlag
 
+
         val normalizedFlag = Utils.getFlag('n', options)
         normalizeDissimilarity = normalizedFlag
     }

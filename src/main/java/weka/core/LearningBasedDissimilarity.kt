@@ -1,9 +1,6 @@
 package weka.core
 
-import me.jacobrr.LearningCompanion
-import me.jacobrr.ModifiedOption
-import me.jacobrr.MultiplyOption
-import me.jacobrr.toEnumeration
+import me.jacobrr.*
 import java.util.*
 
 open class LearningBasedDissimilarity : BaseCategoricalDistance() {
@@ -16,10 +13,12 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
     private var normalizeDissimilarity = false
     private var option: ModifiedOption = ModifiedOption.BASE
     private var multiplyOption: MultiplyOption = MultiplyOption.NORMAL
+    private var aucOption: AUCOption = AUCOption.NORMAL
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
-        learningCompanion = LearningCompanion(strategy, multiplyWeight, decideWeight, symmetric, normalizeDissimilarity)
+        learningCompanion = LearningCompanion(strategy, multiplyWeight, decideWeight, symmetric, normalizeDissimilarity,
+            aucOption)
         learningCompanion.trainClassifiers(instances)
     }
 
@@ -98,6 +97,13 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
 
         result.add(
             Option(
+                "Which AUC type is going to be used. Options are N for normal, S Sor second and W for weka. " +
+                        "Defaults to N", "a", 1, "-a <weightType>"
+            )
+        )
+
+        result.add(
+            Option(
                 "Whether to make the similarity matrix symmetric", "s", 0, "-s"
             )
         )
@@ -144,6 +150,13 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
             else -> MultiplyOption.NO_MULTIPLY
         }
 
+        val auc = Utils.getOption('a', options)
+        aucOption = when (auc) {
+            "S" -> AUCOption.SECOND
+            "W" -> AUCOption.WEKA
+            else -> AUCOption.NORMAL
+        }
+
         val symmetricFlag = Utils.getFlag('s', options)
         symmetric = symmetricFlag
 
@@ -164,6 +177,8 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         result.add(option.s)
         result.add("-t")
         result.add(multiplyOption.s)
+        result.add("-a")
+        result.add(aucOption.s)
         return result.toTypedArray()
     }
 }

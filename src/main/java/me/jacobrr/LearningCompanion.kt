@@ -10,7 +10,6 @@ import weka.classifiers.lazy.KStar
 import weka.classifiers.meta.Bagging
 import weka.classifiers.trees.RandomForest
 import weka.core.Instances
-import weka.core.LearningBasedDissimilarity
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -18,7 +17,8 @@ class LearningCompanion(
     private val strategy: String, private val multiplyWeight: String,
     private val decideWeight: String,
     private val makeSymmetric: Boolean = false,
-    private val normalizeDissimilarity: Boolean = false
+    private val normalizeDissimilarity: Boolean = false,
+    private val aucType: AUCOption = AUCOption.NORMAL
 ) {
     var weights: MutableMap<Int, Double> = HashMap()
     var dissimilarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>> = HashMap()
@@ -127,7 +127,12 @@ class LearningCompanion(
             val eval = Evaluation(instances)
             eval.evaluateModel(classifier, testing)
             val confusion = eval.confusionMatrix()
-            auc += computeMulticlassAUC(confusion)
+
+            auc += when(aucType) {
+                AUCOption.NORMAL -> computeMultiClassAUC(confusion)
+                AUCOption.SECOND -> computeMultiClassAUC2(confusion)
+                AUCOption.WEKA -> eval.weightedAreaUnderROC()
+            }
             kappa += eval.kappa()
             for (i in 0 until size) {
                 for (j in 0 until size) {
@@ -243,7 +248,7 @@ class LearningCompanion(
         return 1.0
     }
 
-    private fun computeMulticlassAUC(confusionMatrix: Array<DoubleArray>): Double {
+    private fun computeMultiClassAUC(confusionMatrix: Array<DoubleArray>): Double {
         var sum = 0.0
         var count = 0
         for (i in 0 until confusionMatrix.size) {
@@ -261,6 +266,36 @@ class LearningCompanion(
             }
         }
         return sum / count
+    }
+
+    private fun computeMultiClassAUC2(confusionMatrix: Array<DoubleArray>): Double {
+        var tp = 0.0
+        var fp = 0.0
+        var fn = 0.0
+        var tn = 0.0
+        for (i in 0 until confusionMatrix.size) {
+            tp += confusionMatrix[i][i]
+            for (j in 0 until confusionMatrix.size) {
+                if (i != j) {
+                    fn += confusionMatrix[i][j]
+                    fp += confusionMatrix[j][i]
+                }
+            }
+
+
+            for (k in 0 until confusionMatrix.size) {
+                for (j in 0 until confusionMatrix.size) {
+                    if (k != i && j != i) {
+                        tn += confusionMatrix[k][j]
+                    }
+                }
+            }
+        }
+        val positives = tp + fn;
+        val negatives = tn + fp;
+        var tprate = if (positives > 0.0) tp / positives else 1.0
+        var fprate = if (negatives > 0.0) tn / negatives else 1.0
+        return (tprate + fprate) / 2.0;
     }
 }
 

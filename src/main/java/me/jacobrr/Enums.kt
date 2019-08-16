@@ -12,3 +12,9 @@ enum class MultiplyOption(val s: String) {
     ONE_MINUS("I"),
     NO_MULTIPLY("O")
 }
+
+enum class AUCOption(val s: String){
+    NORMAL("N"),
+    SECOND("S"),
+    WEKA("W")
+}

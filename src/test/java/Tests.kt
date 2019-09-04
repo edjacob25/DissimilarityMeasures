@@ -64,36 +64,38 @@ class TestSource {
         // -min-density 2.0 -t1 -1.25 -t2 -1.0 -N 16 -A "weka.core.LearningBasedDissimilarity -R first-last -S A -w N"
         // -I 500 -num-slots 4 -S 10 -i /mnt/f/Datasets/CleanedDatasets2/arrhythmia_cleaned.arff
         // -o /mnt/f/Datasets/CleanedDatasets2/arrhythmia_cleaned_clustered.arff -I Last
-        val command = arrayOf(
-            "-W",
-            "weka.clusterers.CategoricalKMeans -init 0 -max-candidates 100 -periodic-pruning 10000 -min-density 2.0 " +
-                    "-t1 -1.25 -t2 -1.0 -N 16 -M -A \"weka.core.LearningBasedDissimilarity -w A -o D -t I -R first-last\" " +
-                    "-I 500 -num-slots 4 -S 10",
-            "-i",
-            "F:\\Datasets\\Categorical\\balloons.arff",
-            "-o",
-            "F:\\Datasets\\Categorical\\balloons_clustered.arff",
-            "-I",
-            "Last"
-        )
-        Filter.runFilter(AddCluster(), command)
+        for ((i, s) in listOf("-S D -W A -w A -o D -t O").withIndex()) {
+            val command = arrayOf(
+                "-W",
+                "weka.clusterers.CategoricalKMeans -init 0 -max-candidates 100 -periodic-pruning 10000 -min-density 2.0 " +
+                        "-t1 -1.25 -t2 -1.0 -N 2 -M -A \"weka.core.LearningBasedDissimilarity $s -R first-last\" " +
+                        "-I 500 -num-slots 4 -S 10",
+                "-i",
+                "F:\\Datasets\\CleanedDatasets2\\arrhythmia_cleaned.arff",
+                "-o",
+                "F:\\Datasets\\CleanedDatasets2\\arrhythmia_clustered_$i.arff",
+                "-I",
+                "Last"
+            )
+            Filter.runFilter(AddCluster(), command)
+        }
     }
 
-    @test
-    fun CleanTest() {
-        val instances = loadDataset("F:\\Datasets\\Categorical\\balloons.arff")
-        val measure = Clean()
-        measure.instances = instances
-
-
-        val kmeans = CategoricalKMeans()
-        kmeans.distanceFunction = measure
-        kmeans.buildClusterer(instances)
-        val instance = instances[0]
-        kmeans.clusterInstance(instance)
-
-        Assert.assertEquals(true, true)
-    }
+//    @test
+//    fun CleanTest() {
+//        val instances = loadDataset("F:\\Datasets\\Categorical\\balloons.arff")
+//        val measure = Clean()
+//        measure.instances = instances
+//
+//
+//        val kmeans = CategoricalKMeans()
+//        kmeans.distanceFunction = measure
+//        kmeans.buildClusterer(instances)
+//        val instance = instances[0]
+//        kmeans.clusterInstance(instance)
+//
+//        Assert.assertEquals(true, true)
+//    }
 }
 
 // This is the weather.nominal dataset, created in memory for the purpose of testing in a small, known dataset

@@ -18,7 +18,8 @@ class LearningCompanion(
     private val decideWeight: String,
     private val makeSymmetric: Boolean = false,
     private val normalizeDissimilarity: Boolean = false,
-    private val aucType: AUCOption = AUCOption.NORMAL
+    private val aucType: AUCOption = AUCOption.NORMAL,
+    private val classifierPath: String = "weka.classifiers.bayes.NaiveBayes"
 ) {
     var weights: MutableMap<Int, Double> = HashMap()
     var dissimilarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>> = HashMap()
@@ -29,9 +30,7 @@ class LearningCompanion(
         println("Chosen weight to multiply is $multiplyWeight")
         println("Chosen weight to decide is $decideWeight")
         for (attribute in instances.enumerateAttributes()) {
-            val isLessThan1000 = instances.numInstances() < 1000
-            val classifiers = initializeClassifiers(isLessThan1000)
-
+            val classifier = initializeClassifier(classifierPath)
             val stats = instances.attributeStats(attribute.index())
 
             if (attribute.numValues() > 50 || !stats.nominalCounts.all { it > 0 } || stats.missingCount > stats.totalCount / 2) {
@@ -41,15 +40,8 @@ class LearningCompanion(
             }
             instances.setClass(attribute)
 
-            val results = mutableListOf<ClassifierResult>()
-            for (classifier in classifiers) {
-                results.add(evaluateClassifier(instances, classifier))
-            }
-            val (confusion, auc, kappa, name) = if (decideWeight == "K") {
-                results.maxBy { it.kappa }!!
-            } else {
-                results.maxBy { it.auc }!!
-            }
+            val result = evaluateClassifier(instances, classifier)
+            val (confusion, auc, kappa, name) = result
             println("The chosen classifier is $name")
             val similarity = normalizeMatrix(confusion)
             val fixedSimilarity = fixSimilarityMatrix(similarity)
@@ -100,20 +92,9 @@ class LearningCompanion(
         return result
     }
 
-    // TODO: Add code to detect SVM from packages and flag to activate it
-    private fun initializeClassifiers(lessThan1000instances: Boolean = false): List<Classifier> {
-        val classifiers = mutableListOf<Classifier>()
-        classifiers.add(RandomForest())
-        classifiers.add(NaiveBayes())
-        classifiers.add(BayesNet())
-        classifiers.add(Bagging())
-        classifiers.add(SimpleLogistic())
-        // TODO: Add an option to not use KStar as is very heavy
-        classifiers.add(KStar())
-        if (lessThan1000instances) {
-            classifiers.add(IBk())
-        }
-        return classifiers
+    private fun initializeClassifier(name: String): Classifier{
+        println("Classifier namespace is $name")
+        return weka.core.WekaPackageClassLoaderManager.objectForName(name) as Classifier
     }
 
     private fun evaluateClassifier(instances: Instances, classifier: Classifier): ClassifierResult {

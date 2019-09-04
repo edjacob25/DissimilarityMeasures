@@ -14,11 +14,12 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
     private var option: ModifiedOption = ModifiedOption.BASE
     private var multiplyOption: MultiplyOption = MultiplyOption.NORMAL
     private var aucOption: AUCOption = AUCOption.NORMAL
+    private var classifierClasspath: String = "weka.classifiers.bayes.NaiveBayes"
 
     override fun setInstances(insts: Instances?) {
         super.setInstances(insts)
         learningCompanion = LearningCompanion(strategy, multiplyWeight, decideWeight, symmetric, normalizeDissimilarity,
-            aucOption)
+            aucOption, classifierClasspath)
         learningCompanion.trainClassifiers(instances)
     }
 
@@ -114,6 +115,11 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
             )
         )
 
+        result.add(
+            Option(
+                "Classpath of the chosen classifier", "c", 1, "-c <classpath>"
+            )
+        )
         return result.toEnumeration()
     }
 
@@ -160,9 +166,13 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         val symmetricFlag = Utils.getFlag('s', options)
         symmetric = symmetricFlag
 
-
         val normalizedFlag = Utils.getFlag('n', options)
         normalizeDissimilarity = normalizedFlag
+
+        val classname = Utils.getOption('c', options)
+        if (classname.isNotEmpty()) {
+            classifierClasspath = classname
+        }
     }
 
     override fun getOptions(): Array<String> {
@@ -179,6 +189,8 @@ open class LearningBasedDissimilarity : BaseCategoricalDistance() {
         result.add(multiplyOption.s)
         result.add("-a")
         result.add(aucOption.s)
+        result.add("-c")
+        result.add(classifierClasspath)
         return result.toTypedArray()
     }
 }

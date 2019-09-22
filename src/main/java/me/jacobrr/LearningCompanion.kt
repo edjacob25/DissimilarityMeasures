@@ -3,13 +3,6 @@ package me.jacobrr
 import weka.classifiers.AbstractClassifier
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
-import weka.classifiers.bayes.BayesNet
-import weka.classifiers.bayes.NaiveBayes
-import weka.classifiers.functions.SimpleLogistic
-import weka.classifiers.lazy.IBk
-import weka.classifiers.lazy.KStar
-import weka.classifiers.meta.Bagging
-import weka.classifiers.trees.RandomForest
 import weka.core.Instances
 import java.util.*
 import kotlin.collections.HashMap
@@ -62,10 +55,10 @@ class LearningCompanion(
             }
 
             val attributeIMap = mutableMapOf<String, MutableMap<String, Double>>()
-            for (i in 0 until similarity.size) {
+            for (i in similarity.indices) {
                 val attributeJMap = mutableMapOf<String, Double>()
                 print(attribute.value(i))
-                for (j in 0 until similarity.size) {
+                for (j in similarity.indices) {
                     attributeJMap[attribute.value(j)] = dissimilarity[i][j]
                     print("|${dissimilarity[i][j]}|")
                 }

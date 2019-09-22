@@ -1,5 +1,6 @@
 package me.jacobrr
 
+import weka.classifiers.AbstractClassifier
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
 import weka.classifiers.bayes.BayesNet
@@ -94,7 +95,12 @@ class LearningCompanion(
 
     private fun initializeClassifier(name: String): Classifier{
         println("Classifier namespace is $name")
-        return weka.core.WekaPackageClassLoaderManager.objectForName(name) as Classifier
+        val classifier  = weka.core.WekaPackageClassLoaderManager.objectForName(name) as AbstractClassifier
+        classifier.options = arrayOf("-timeLimit", "7",
+            "-memLimit", "2048",
+            "-metric", "areaUnderROC",
+            "-parallelRuns", "40")
+        return classifier
     }
 
     private fun evaluateClassifier(instances: Instances, classifier: Classifier): ClassifierResult {

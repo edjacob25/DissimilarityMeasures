@@ -99,7 +99,7 @@ class LearningCompanion(
     }
 
     private fun evaluateClassifier(instances: Instances, classifier: Classifier): ClassifierResult {
-        val folds = createFolds(instances)
+        val folds = splitDataset(instances)
         val size = instances.numDistinctValues(instances.classAttribute())
         val confusionMatrix = Array(size) { DoubleArray(size) }
         var auc = 0.0
@@ -133,6 +133,19 @@ class LearningCompanion(
         auc /= folds.size
         kappa /= folds.size
         return ClassifierResult(confusionMatrix, auc, kappa, classifier.javaClass.simpleName)
+    }
+
+    private fun splitDataset(insts: Instances?): List<Pair<Instances, Instances>>{
+        val seed = 1L
+        val folds = 5
+        val rand = Random(seed)   // create seeded number generator
+        val randData = Instances(insts)   // create copy of original data
+        randData.randomize(rand) // randomize data with number generator
+        randData.stratify(folds)
+        val train = randData.trainCV(folds, 0)
+        val test = randData.testCV(folds, 0)
+        println("Train size is ${train.size}, test size is ${test.size}")
+        return listOf(Pair(train, test))
     }
 
     private fun createFolds(insts: Instances?, folds: Int = 10): List<Pair<Instances, Instances>> {

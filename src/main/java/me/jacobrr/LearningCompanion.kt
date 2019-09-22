@@ -4,8 +4,10 @@ import weka.classifiers.AbstractClassifier
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
 import weka.core.Instances
+import java.time.LocalDateTime
 import java.util.*
 import kotlin.collections.HashMap
+import kotlin.system.measureTimeMillis
 
 class LearningCompanion(
     private val strategy: String, private val multiplyWeight: String,
@@ -102,8 +104,16 @@ class LearningCompanion(
         val confusionMatrix = Array(size) { DoubleArray(size) }
         var auc = 0.0
         var kappa = 0.0
-        for ((training, testing) in folds) {
-            classifier.buildClassifier(training)
+        print("For property ${instances.classAttribute().name()}")
+        for ((fold, pair) in folds.withIndex()) {
+            val (training, testing) = pair
+            print("Starting to build classifier for fold $fold at ${LocalDateTime.now()}")
+            val time = measureTimeMillis {
+                classifier.buildClassifier(training)
+            }
+            val minutes = time / 1000 / 60
+            val seconds = time / 1000 % 60
+            print("Finished to build classifier for fold $fold at ${LocalDateTime.now()}, took $minutes minutes and $seconds seconds")
             val eval = Evaluation(instances)
             eval.evaluateModel(classifier, testing)
             val confusion = eval.confusionMatrix()

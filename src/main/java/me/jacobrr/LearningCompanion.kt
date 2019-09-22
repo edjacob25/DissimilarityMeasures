@@ -96,7 +96,7 @@ class LearningCompanion(
     private fun initializeClassifier(name: String): Classifier{
         println("Classifier namespace is $name")
         val classifier  = weka.core.WekaPackageClassLoaderManager.objectForName(name) as AbstractClassifier
-        classifier.options = arrayOf("-timeLimit", "7",
+        classifier.options = arrayOf("-timeLimit", "15",
             "-memLimit", "2048",
             "-metric", "areaUnderROC",
             "-parallelRuns", "40")

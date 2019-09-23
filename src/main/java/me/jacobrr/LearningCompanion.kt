@@ -4,6 +4,7 @@ import weka.classifiers.AbstractClassifier
 import weka.classifiers.Classifier
 import weka.classifiers.Evaluation
 import weka.core.Instances
+import java.lang.NullPointerException
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.collections.HashMap
@@ -36,7 +37,12 @@ class LearningCompanion(
             }
             instances.setClass(attribute)
 
-            val result = evaluateClassifier(instances, classifier)
+            val result = try{evaluateClassifier(instances, classifier)} catch( e: NullPointerException){null}
+            if (result == null) {
+                weights[attribute.index()] = 0.0
+                println("Autoweka had an error evaluating attribute ${attribute.name()}, it won't be taken in account")
+                continue
+            }
             val (confusion, auc, kappa, name) = result
             println("The chosen classifier is $name")
             val similarity = normalizeMatrix(confusion)

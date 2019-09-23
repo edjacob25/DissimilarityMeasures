@@ -16,7 +16,8 @@ class LearningCompanion(
     private val makeSymmetric: Boolean = false,
     private val normalizeDissimilarity: Boolean = false,
     private val aucType: AUCOption = AUCOption.NORMAL,
-    private val classifierPath: String = "weka.classifiers.bayes.NaiveBayes"
+    private val classifierPath: String = "weka.classifiers.bayes.NaiveBayes",
+    private val seed: Long = 1L
 ) {
     var weights: MutableMap<Int, Double> = HashMap()
     var dissimilarityMatrices: MutableMap<Int, MutableMap<String, MutableMap<String, Double>>> = HashMap()
@@ -142,7 +143,6 @@ class LearningCompanion(
     }
 
     private fun splitDataset(insts: Instances?): List<Pair<Instances, Instances>>{
-        val seed = 1L
         val folds = 5
         val rand = Random(seed)   // create seeded number generator
         val randData = Instances(insts)   // create copy of original data
@@ -155,7 +155,6 @@ class LearningCompanion(
     }
 
     private fun createFolds(insts: Instances?, folds: Int = 10): List<Pair<Instances, Instances>> {
-        val seed = 1L
         val rand = Random(seed)   // create seeded number generator
         val randData = Instances(insts)   // create copy of original data
         randData.randomize(rand)         // randomize data with number generator

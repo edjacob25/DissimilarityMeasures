@@ -29,6 +29,11 @@ class LearningCompanion(
         println("Chosen weight to multiply is $multiplyWeight")
         println("Chosen weight to decide is $decideWeight")
         for (attribute in instances.enumerateAttributes()) {
+            if (!attribute.isNominal) {
+                println("Attribute ${attribute.name()} is not a nominal attribute, skipping training")
+                continue
+            }
+
             val isLessThan1000 = instances.numInstances() < 1000
             val classifiers = initializeClassifiers(isLessThan1000)
 

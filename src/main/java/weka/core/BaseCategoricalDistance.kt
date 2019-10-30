@@ -2,6 +2,7 @@ package weka.core
 
 import me.jacobrr.FrequencyCompanion
 import weka.core.neighboursearch.PerformanceStats
+import kotlin.math.abs
 
 abstract class BaseCategoricalDistance : NormalizableDistance {
     constructor() : super()
@@ -57,8 +58,16 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
                 p2++
                 continue
             }
-
             val diff: Double
+
+            if (!first.attribute(firstI).isNominal) {
+                diff = difference(firstI, first.valueSparse(p1), second.valueSparse(p2))
+                distance = updateDistance(distance, diff)
+                p1++
+                p2++
+                continue
+            }
+
             val value1 = first.stringValue(firstI)
             val value2 = second.stringValue(secondI)
             if (value1 == "?" || value2 == "?") {
@@ -93,46 +102,20 @@ abstract class BaseCategoricalDistance : NormalizableDistance {
 
     override fun difference(index: Int, val1: Double, val2: Double): Double {
         when (m_Data.attribute(index).type()) {
-            Attribute.NOMINAL -> return if (Utils.isMissingValue(val1) || Utils.isMissingValue(
-                    val2
-                )
-                || val1.toInt() != val2.toInt()
-            ) {
-                1.0
-            } else {
-                0.0
-            }
-
-            Attribute.NUMERIC -> if (Utils.isMissingValue(val1) || Utils.isMissingValue(
-                    val2
-                )
-            ) {
+            Attribute.NUMERIC -> if (Utils.isMissingValue(val1) || Utils.isMissingValue(val2)) {
                 if (Utils.isMissingValue(val1) && Utils.isMissingValue(val2)) {
-                    return if (!m_DontNormalize) {
-                        1.0
-                    } else {
-                        m_Ranges[index][R_WIDTH]
-                    }
+                    return 1.0
                 } else {
-                    var diff: Double
-                    diff = if (Utils.isMissingValue(val2)) {
-                        if (!m_DontNormalize) norm(val1, index) else val1
+                    val diff = if (Utils.isMissingValue(val2)) {
+                        norm(val1, index)
                     } else {
-                        if (!m_DontNormalize) norm(val2, index) else val2
-                    }
-                    if (!m_DontNormalize && diff < 0.5) {
-                        diff = 1.0 - diff
-                    } else if (m_DontNormalize) {
-                        return if (m_Ranges[index][R_MAX] - diff > diff - m_Ranges[index][R_MIN]) {
-                            m_Ranges[index][R_MAX] - diff
-                        } else {
-                            diff - m_Ranges[index][R_MIN]
-                        }
+                        norm(val2, index)
                     }
                     return diff
                 }
             } else {
-                return if (!m_DontNormalize) norm(val1, index) - norm(val2, index) else val1 - val2
+                val diff = abs(norm(val1, index) - norm(val2, index))
+                return diff
             }
 
             else -> return 0.0

@@ -12,6 +12,9 @@ class FrequencyCompanion constructor(instances: Instances) : Serializable {
         val map = HashMap<String, HashMap<String, Int>>()
         originalNumOfInstances = instances.numInstances()
         for (attribute in instances.enumerateAttributes()) {
+            if (!attribute.isNominal) {
+                continue
+            }
             val name = attribute.name()
             val attributesCount = map.getOrDefault(name, HashMap())
             for (instance in instances) {

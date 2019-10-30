@@ -22,6 +22,9 @@ open class LinModified_Kappa : BaseCategoricalDistance() {
         // This calculates the Lin weight for each pair of instances
         var result = 0.0
         for (attribute in this.instances.enumerateAttributes()) {
+            if (!attribute.isNominal) {
+                continue
+            }
             val index = attribute.index()
             val log1 = Math.log(probabilityA(index, first!!.stringValue(index)))
             val log2 = Math.log(probabilityA(index, second!!.stringValue(index)))

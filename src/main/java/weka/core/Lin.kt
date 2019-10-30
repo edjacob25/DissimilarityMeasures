@@ -7,6 +7,9 @@ class Lin : BaseCategoricalDistance() {
     override fun distance(first: Instance?, second: Instance?, cutOffValue: Double, stats: PerformanceStats?): Double {
         var result = 0.0
         for (attribute in this.instances.enumerateAttributes()) {
+            if (!attribute.isNominal) {
+                continue
+            }
             val index = attribute.index()
             val log1 = Math.log(probabilityA(index, first!!.stringValue(index)))
             val log2 = Math.log(probabilityA(index, second!!.stringValue(index)))

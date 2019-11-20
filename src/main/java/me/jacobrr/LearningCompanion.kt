@@ -133,7 +133,7 @@ class LearningCompanion(
             eval.evaluateModel(classifier, testing)
             val confusion = eval.confusionMatrix()
 
-            auc += when(aucType) {
+            auc += when (aucType) {
                 AUCOption.NORMAL -> computeMultiClassAUC(confusion)
                 AUCOption.SECOND -> computeMultiClassAUC2(confusion)
                 AUCOption.WEKA -> eval.weightedAreaUnderROC()
